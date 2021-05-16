@@ -1,8 +1,8 @@
 use crate::components::{Position, Size};
 use bevy::prelude::*;
 
-const ARENA_WIDTH: u32 = 111;
-const ARENA_HEIGHT: u32 = 111;
+const ARENA_WIDTH: u32 = 11;
+const ARENA_HEIGHT: u32 = 11;
 
 pub fn size_scaling(windows: Res<Windows>, mut q: Query<(&Size, &mut Sprite)>) {
     let window = windows.get_primary().unwrap();

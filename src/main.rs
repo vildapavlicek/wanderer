@@ -11,7 +11,7 @@ fn main() {
     println!("Hello, world!");
     App::build()
         .insert_resource(WindowDescriptor {
-            title: "Snake!".to_string(),
+            title: "Lonely Wanderer".to_string(),
             width: 500.0,
             height: 500.0,
             ..Default::default()
@@ -25,7 +25,7 @@ fn main() {
         )
         .add_startup_stage(
             "spawn_obstacle",
-            SystemStage::single(obstacle::spawn_obstacle.system()),
+            SystemStage::single(obstacle::spawn_obstacles.system()),
         )
         // .add_system(systems::player::handle_key_input.system())
         .add_system_set(

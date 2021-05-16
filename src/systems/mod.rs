@@ -15,5 +15,6 @@ pub fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>
     commands.insert_resource(super::resources::Materials {
         player_material: materials.add(Color::rgb(0.7, 0.7, 0.7).into()),
         obstacle_material: materials.add(Color::rgb(1., 1., 1.).into()),
+        enemy_material: materials.add(Color::rgb(1., 0., 0.).into()),
     });
 }
