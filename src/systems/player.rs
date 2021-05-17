@@ -1,8 +1,10 @@
-use crate::components::{Blocking, BlockingType, Enemy, Health, Player, Position, Size};
-use crate::resources::Materials;
-use crate::systems::PlayerSystems;
-use bevy::input::keyboard::KeyCode::Key0;
+use crate::resources::GameState;
 /// Systems related to the player
+use crate::{
+    components::{Blocking, BlockingType, Enemy, Health, Player, Position, Size},
+    resources::Materials,
+    systems::PlayerSystems,
+};
 use bevy::prelude::*;
 
 pub const PLAYER_INIT_MAX_HEALTH: i32 = 100;
@@ -89,6 +91,7 @@ pub fn handle_key_input(
 }
 
 pub fn player_move_or_attack(
+    mut game_state: ResMut<GameState>,
     mut commands: Commands,
     mut player_action_reader: EventReader<PlayerActionEvent>,
     mut player_position: Query<&mut Position, With<Player>>,
@@ -99,6 +102,7 @@ pub fn player_move_or_attack(
             let mut pos = player_position.single_mut().unwrap();
             pos.x = *x;
             pos.y = *y;
+            game_state.next();
         }
         Some(PlayerActionEvent::Attack(target)) => {
             if let Some((entity, mut health)) =
@@ -109,6 +113,7 @@ pub fn player_move_or_attack(
                     commands.entity(entity).despawn();
                 }
             }
+            game_state.next();
         }
         None => (),
     }
