@@ -1,8 +1,28 @@
 use crate::components::{Blocking, BlockingType, Player, Position, Size};
-use crate::events::player::PlayerActionEvent;
 use crate::resources::Materials;
+use crate::systems::PlayerSystems;
+use bevy::input::keyboard::KeyCode::Key0;
 /// Systems related to the player
 use bevy::prelude::*;
+
+pub struct PlayerPlugins;
+
+impl Plugin for PlayerPlugins {
+    fn build(&self, app: &mut AppBuilder) {
+        app.add_startup_stage("spawn_player", SystemStage::single(spawn_player.system()))
+            .add_system_set(
+                SystemSet::new()
+                    .with_system(handle_key_input.system().label(PlayerSystems::HandleInput))
+                    .with_system(
+                        player_movement
+                            .system()
+                            .label(PlayerSystems::PlayerMovement)
+                            .after(PlayerSystems::HandleInput),
+                    ),
+            )
+            .add_event::<PlayerActionEvent>();
+    }
+}
 
 pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
     commands
@@ -17,6 +37,17 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
         .insert(Size::square(0.8));
 }
 
+/// This is used to map key to action
+enum PlayerAction {
+    NoAction,
+    Movement(i32, i32),
+}
+
+pub enum PlayerActionEvent {
+    Move(i32, i32),
+    Attack(Entity),
+}
+
 pub fn handle_key_input(
     key_input: Res<Input<KeyCode>>,
     mut player_action_writer: EventWriter<PlayerActionEvent>,
@@ -25,102 +56,32 @@ pub fn handle_key_input(
 ) {
     let player_position = player_position.single().expect("no player position!!");
 
-    if key_input.just_pressed(KeyCode::Left) {
-        if let Some((entity, _pos, blocker)) =
-            blocker_position.iter().find(|(entity, pos, blocking)| {
-                info!(
-                    x = format!("{}", pos.x).as_str(),
-                    px = format!("{} - 1", player_position.x).as_str()
-                );
-                (pos.x == (player_position.x - 1)) && (pos.y == player_position.y)
-            })
-        {
-            info!(
-                msg = "position blocked, cannot move",
-                x = _pos.x,
-                y = _pos.y
-            );
-            match blocker.blocking_type {
-                BlockingType::Wall => return,
-                BlockingType::Obstacle => return,
-                BlockingType::Enemy => player_action_writer.send(PlayerActionEvent::Attack(entity)),
+    let action = if key_input.just_pressed(KeyCode::Left) {
+        PlayerAction::Movement(player_position.x - 1, player_position.y)
+    } else if key_input.just_pressed(KeyCode::Up) {
+        PlayerAction::Movement(player_position.x, player_position.y + 1)
+    } else if key_input.just_pressed(KeyCode::Right) {
+        PlayerAction::Movement(player_position.x + 1, player_position.y)
+    } else if key_input.just_pressed(KeyCode::Down) {
+        PlayerAction::Movement(player_position.x, player_position.y - 1)
+    } else {
+        PlayerAction::NoAction
+    };
+
+    match action {
+        PlayerAction::Movement(x, y) => {
+            match blocker_position
+                .iter()
+                .find(|(entity, pos, blocking)| (pos.x == x) && (pos.y == y))
+            {
+                Some((entity, _, blocking)) if blocking.is_attackable() => {
+                    player_action_writer.send(PlayerActionEvent::Attack(entity))
+                }
+                Some(_) => (),
+                None => player_action_writer.send(PlayerActionEvent::Move(x, y)),
             }
         }
-
-        player_action_writer.send(PlayerActionEvent::MoveLeft)
-    }
-
-    if key_input.just_pressed(KeyCode::Up) {
-        if let Some((entity, _pos, blocker)) =
-            blocker_position.iter().find(|(entity, pos, blocking)| {
-                info!(
-                    y = format!("{}", pos.y).as_str(),
-                    py = format!("{} + 1", player_position.y).as_str(),
-                );
-                (pos.y == (player_position.y + 1)) && (pos.x == player_position.x)
-            })
-        {
-            info!(
-                msg = "position blocked, cannot move",
-                x = _pos.x,
-                y = _pos.y
-            );
-
-            match blocker.blocking_type {
-                BlockingType::Wall => return,
-                BlockingType::Obstacle => return,
-                BlockingType::Enemy => player_action_writer.send(PlayerActionEvent::Attack(entity)),
-            }
-        }
-        player_action_writer.send(PlayerActionEvent::MoveUp)
-    }
-
-    if key_input.just_pressed(KeyCode::Right) {
-        if let Some((entity, _pos, blocker)) =
-            blocker_position.iter().find(|(entity, pos, blocking)| {
-                info!(
-                    x = format!("{}", pos.x).as_str(),
-                    px = format!("{} + 1", player_position.x).as_str()
-                );
-                pos.x == (player_position.x + 1) && (pos.y == player_position.y)
-            })
-        {
-            info!(
-                msg = "position blocked, cannot move",
-                x = _pos.x,
-                y = _pos.y
-            );
-            match blocker.blocking_type {
-                BlockingType::Wall => return,
-                BlockingType::Obstacle => return,
-                BlockingType::Enemy => player_action_writer.send(PlayerActionEvent::Attack(entity)),
-            }
-        }
-        player_action_writer.send(PlayerActionEvent::MoveRight)
-    }
-
-    if key_input.just_pressed(KeyCode::Down) {
-        if let Some((entity, _pos, blocker)) =
-            blocker_position.iter().find(|(entity, pos, blocking)| {
-                info!(
-                    y = format!("{}", pos.y).as_str(),
-                    py = format!("{} - 1", player_position.y).as_str()
-                );
-                pos.y == (player_position.y - 1) && (pos.x == player_position.x)
-            })
-        {
-            info!(
-                msg = "position blocked, cannot move",
-                x = _pos.x,
-                y = _pos.y
-            );
-            match blocker.blocking_type {
-                BlockingType::Wall => return,
-                BlockingType::Obstacle => return,
-                BlockingType::Enemy => player_action_writer.send(PlayerActionEvent::Attack(entity)),
-            }
-        }
-        player_action_writer.send(PlayerActionEvent::MoveDown)
+        PlayerAction::NoAction => (),
     }
 }
 
@@ -128,49 +89,13 @@ pub fn player_movement(
     mut player_action_reader: EventReader<PlayerActionEvent>,
     mut player_position: Query<&mut Position, With<Player>>,
 ) {
-    if let Some(player_action) = player_action_reader.iter().next() {
-        if let Some(mut player_position) = player_position.iter_mut().next() {
-            info!(
-                msg = "position before movement",
-                x = player_position.x,
-                y = player_position.y
-            );
-            match player_action {
-                PlayerActionEvent::MoveLeft => {
-                    player_position.x -= 1;
-                    info!(
-                        msg = "moved to position",
-                        x = player_position.x,
-                        y = player_position.y
-                    )
-                }
-                PlayerActionEvent::MoveUp => {
-                    player_position.y += 1;
-                    info!(
-                        msg = "moved to position",
-                        x = player_position.x,
-                        y = player_position.y
-                    )
-                }
-                PlayerActionEvent::MoveRight => {
-                    player_position.x += 1;
-                    info!(
-                        msg = "moved to position",
-                        x = player_position.x,
-                        y = player_position.y
-                    )
-                }
-                PlayerActionEvent::MoveDown => {
-                    player_position.y -= 1;
-                    info!(
-                        msg = "moved to position",
-                        x = player_position.x,
-                        y = player_position.y
-                    )
-                }
-                PlayerActionEvent::Attack(_) => info!("attacking!!"),
-                _ => (),
-            }
+    match player_action_reader.iter().next() {
+        Some(PlayerActionEvent::Move(x, y)) => {
+            let mut pos = player_position.single_mut().unwrap();
+            pos.x = *x;
+            pos.y = *y;
         }
+        Some(PlayerActionEvent::Attack(_)) => (),
+        None => (),
     }
 }

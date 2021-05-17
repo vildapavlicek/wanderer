@@ -22,6 +22,13 @@ impl Blocking {
             blocking_type: BlockingType::Enemy,
         }
     }
+
+    pub fn is_attackable(&self) -> bool {
+        match self.blocking_type {
+            BlockingType::Enemy => true,
+            _ => false,
+        }
+    }
 }
 
 pub enum BlockingType {
