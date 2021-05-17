@@ -1,4 +1,4 @@
-use crate::components::{Blocking, Position, Size};
+use crate::components::{Blocking, Enemy, Health, Position, Size};
 use crate::resources::Materials;
 use bevy::prelude::*;
 
@@ -21,5 +21,7 @@ pub fn spawn_obstacles(mut commands: Commands, materials: Res<Materials>) {
         })
         .insert(Blocking::enemy())
         .insert(Position { x: 6, y: 6 })
-        .insert(Size::square(1.));
+        .insert(Size::square(1.))
+        .insert(Health::new(50))
+        .insert(Enemy);
 }

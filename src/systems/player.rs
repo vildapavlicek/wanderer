@@ -1,9 +1,11 @@
-use crate::components::{Blocking, BlockingType, Player, Position, Size};
+use crate::components::{Blocking, BlockingType, Enemy, Health, Player, Position, Size};
 use crate::resources::Materials;
 use crate::systems::PlayerSystems;
 use bevy::input::keyboard::KeyCode::Key0;
 /// Systems related to the player
 use bevy::prelude::*;
+
+pub const PLAYER_INIT_MAX_HEALTH: i32 = 100;
 
 pub struct PlayerPlugins;
 
@@ -14,7 +16,7 @@ impl Plugin for PlayerPlugins {
                 SystemSet::new()
                     .with_system(handle_key_input.system().label(PlayerSystems::HandleInput))
                     .with_system(
-                        player_movement
+                        player_move_or_attack
                             .system()
                             .label(PlayerSystems::PlayerMovement)
                             .after(PlayerSystems::HandleInput),
@@ -34,7 +36,8 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
         })
         .insert(Player)
         .insert(Position { x: 1, y: 1 })
-        .insert(Size::square(0.8));
+        .insert(Size::square(0.8))
+        .insert(Health::new(PLAYER_INIT_MAX_HEALTH));
 }
 
 /// This is used to map key to action
@@ -85,9 +88,11 @@ pub fn handle_key_input(
     }
 }
 
-pub fn player_movement(
+pub fn player_move_or_attack(
+    mut commands: Commands,
     mut player_action_reader: EventReader<PlayerActionEvent>,
     mut player_position: Query<&mut Position, With<Player>>,
+    mut enemies: Query<(Entity, &mut Health), With<Enemy>>,
 ) {
     match player_action_reader.iter().next() {
         Some(PlayerActionEvent::Move(x, y)) => {
@@ -95,7 +100,16 @@ pub fn player_movement(
             pos.x = *x;
             pos.y = *y;
         }
-        Some(PlayerActionEvent::Attack(_)) => (),
+        Some(PlayerActionEvent::Attack(target)) => {
+            if let Some((entity, mut health)) =
+                enemies.iter_mut().find(|(entity, _)| entity == target)
+            {
+                health.current -= 1;
+                if health.current <= 0 {
+                    commands.entity(entity).despawn();
+                }
+            }
+        }
         None => (),
     }
 }

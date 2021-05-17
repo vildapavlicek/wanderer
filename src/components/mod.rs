@@ -56,3 +56,20 @@ impl Size {
         }
     }
 }
+
+pub struct Health {
+    pub current: i32,
+    max: i32,
+}
+
+impl Health {
+    pub fn new(max: i32) -> Self {
+        Health {
+            // todo we should fix this
+            current: max,
+            max,
+        }
+    }
+}
+
+pub struct Enemy;

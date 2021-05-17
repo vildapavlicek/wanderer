@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"] // disables console window
 mod components;
 mod events;
 mod resources;
@@ -7,7 +8,6 @@ use crate::systems::{obstacle, player, PlayerSystems};
 use bevy::prelude::*;
 
 fn main() {
-    // println!("Hello, world!");
     App::build()
         .insert_resource(WindowDescriptor {
             title: "Lonely Wanderer".to_string(),
