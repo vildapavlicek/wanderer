@@ -45,6 +45,8 @@ pub fn enemy_move(
         }
     }
 
+    info!(msg = "setting state to PlayerTurn", ?gs);
     game_state.set(TempGameState::PlayerTurn).unwrap();
+    info!(msg = "setting state to PlayerTurn", ?gs);
     // game_state.next();
 }

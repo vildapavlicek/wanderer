@@ -112,6 +112,7 @@ pub fn player_move_or_attack(
     mut enemies: Query<(Entity, &mut Health), With<Enemy>>,
 ) {
     info!(msg = "player move or attack");
+    let gs = &*game_state;
     let change_state = match player_action_reader.iter().next() {
         Some(PlayerActionEvent::Move(x, y)) => {
             info!(msg = "moving player");
@@ -135,6 +136,8 @@ pub fn player_move_or_attack(
     };
 
     if change_state {
-        game_state.set(TempGameState::EnemyTurn).unwrap()
+        info!(msg = "setting state to EnemyTurn");
+        game_state.set(TempGameState::EnemyTurn).unwrap();
+        info!(msg = "set state to EnemyTurn", ?change_state, ?gs);
     }
 }

@@ -1,3 +1,4 @@
+pub mod enemy;
 pub mod grid;
 pub mod obstacle;
 pub mod player;
