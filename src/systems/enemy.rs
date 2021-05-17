@@ -15,30 +15,43 @@ impl std::default::Default for MoveDirection {
 }
 
 pub fn enemy_move(
-    mut game_state: ResMut<GameState>,
+    mut game_state: ResMut<State<GameState>>,
     mut move_direction: Local<MoveDirection>,
-    mut query: Query<(&mut Position), With<Enemy>>,
+    mut query: QuerySet<(
+        Query<&Position, With<Player>>,
+        Query<&mut Position, With<Enemy>>,
+    )>,
 ) {
-    if !game_state.is_enemy_turn() {
-        return;
-    }
+    let player_position = query.q0().single().expect("player position not found");
+    let (player_x, player_y) = (player_position.x, player_position.y);
 
-    for mut position in query.iter_mut() {
-        match move_direction.deref() {
+    for mut position in query.q1_mut().iter_mut() {
+        let future_x = match move_direction.deref() {
             MoveDirection::Left => {
-                position.x -= 1;
-                if position.x <= 0 {
-                    *move_direction = MoveDirection::Right
-                }
+                let x = position.x - 1;
+                x
             }
             MoveDirection::Right => {
-                position.x += 1;
-                if position.x >= super::grid::ARENA_WIDTH as i32 - 1 {
+                let x = position.x + 1;
+                // if position.x >= super::grid::ARENA_WIDTH as i32 - 1 {
+                //     *move_direction = MoveDirection::Left
+                // }
+                x
+            }
+        };
+
+        if !(future_x == player_x && player_y == position.y) {
+            position.x = future_x;
+
+            match move_direction.deref() {
+                MoveDirection::Left if position.x <= 0 => *move_direction = MoveDirection::Right,
+                MoveDirection::Right if position.x >= super::grid::ARENA_WIDTH as i32 - 1 => {
                     *move_direction = MoveDirection::Left
                 }
+                _ => (),
             }
         }
     }
 
-    game_state.next();
+    game_state.set(GameState::PlayerTurn).unwrap();
 }

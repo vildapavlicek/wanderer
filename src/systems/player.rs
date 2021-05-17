@@ -15,7 +15,7 @@ impl Plugin for PlayerPlugins {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_stage("spawn_player", SystemStage::single(spawn_player.system()))
             .add_system_set(
-                SystemSet::new()
+                SystemSet::on_update(GameState::PlayerTurn)
                     .with_system(handle_key_input.system().label(PlayerSystems::HandleInput))
                     .with_system(
                         player_move_or_attack
@@ -43,6 +43,7 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
 }
 
 /// This is used to map key to action
+#[derive(Debug)]
 enum PlayerAction {
     NoAction,
     Movement(i32, i32),
@@ -54,14 +55,15 @@ pub enum PlayerActionEvent {
 }
 
 pub fn handle_key_input(
-    key_input: Res<Input<KeyCode>>,
+    mut game_state: ResMut<State<GameState>>,
+    mut key_input: ResMut<Input<KeyCode>>,
     mut player_action_writer: EventWriter<PlayerActionEvent>,
     player_position: Query<&Position, With<Player>>,
     blocker_position: Query<(Entity, &Position, &Blocking)>,
 ) {
     let player_position = player_position.single().expect("no player position!!");
 
-    let action = if key_input.just_pressed(KeyCode::Left) {
+    let mut action = if key_input.just_pressed(KeyCode::Left) {
         PlayerAction::Movement(player_position.x - 1, player_position.y)
     } else if key_input.just_pressed(KeyCode::Up) {
         PlayerAction::Movement(player_position.x, player_position.y + 1)
@@ -72,6 +74,9 @@ pub fn handle_key_input(
     } else {
         PlayerAction::NoAction
     };
+
+    // need to update or the last key input gets cached and freezes app
+    key_input.update();
 
     match action {
         PlayerAction::Movement(x, y) => {
@@ -88,21 +93,23 @@ pub fn handle_key_input(
         }
         PlayerAction::NoAction => (),
     }
+
+    action = PlayerAction::NoAction;
 }
 
 pub fn player_move_or_attack(
-    mut game_state: ResMut<GameState>,
+    mut game_state: ResMut<State<GameState>>,
     mut commands: Commands,
     mut player_action_reader: EventReader<PlayerActionEvent>,
     mut player_position: Query<&mut Position, With<Player>>,
     mut enemies: Query<(Entity, &mut Health), With<Enemy>>,
 ) {
-    match player_action_reader.iter().next() {
+    let change_state = match player_action_reader.iter().next() {
         Some(PlayerActionEvent::Move(x, y)) => {
             let mut pos = player_position.single_mut().unwrap();
             pos.x = *x;
             pos.y = *y;
-            game_state.next();
+            true
         }
         Some(PlayerActionEvent::Attack(target)) => {
             if let Some((entity, mut health)) =
@@ -112,9 +119,13 @@ pub fn player_move_or_attack(
                 if health.current <= 0 {
                     commands.entity(entity).despawn();
                 }
-            }
-            game_state.next();
+            };
+            true
         }
-        None => (),
+        None => false,
+    };
+
+    if change_state {
+        game_state.set(GameState::EnemyTurn).unwrap();
     }
 }
