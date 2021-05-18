@@ -33,9 +33,6 @@ pub fn enemy_move(
             }
             MoveDirection::Right => {
                 let x = position.x + 1;
-                // if position.x >= super::grid::ARENA_WIDTH as i32 - 1 {
-                //     *move_direction = MoveDirection::Left
-                // }
                 x
             }
         };
