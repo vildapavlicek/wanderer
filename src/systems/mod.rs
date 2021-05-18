@@ -2,6 +2,7 @@ pub mod enemy;
 pub mod grid;
 pub mod obstacle;
 pub mod player;
+pub mod ranged;
 
 use bevy::prelude::*;
 
