@@ -4,6 +4,7 @@ use bevy::prelude::*;
 pub enum GameState {
     PlayerTurn,
     EnemyTurn,
+    RangedTargeting,
 }
 pub struct Materials {
     pub player_material: Handle<ColorMaterial>,

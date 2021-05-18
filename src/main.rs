@@ -5,7 +5,7 @@ mod resources;
 mod systems;
 
 use crate::resources::GameState;
-use crate::systems::{obstacle, player, PlayerSystems};
+use crate::systems::{obstacle, player, ranged, PlayerSystems};
 use bevy::prelude::*;
 
 fn main() {
@@ -20,6 +20,7 @@ fn main() {
         .add_state(GameState::PlayerTurn)
         .add_plugins(DefaultPlugins)
         .add_plugin(player::PlayerPlugins)
+        .add_plugin(ranged::RangedPlugin)
         .add_startup_system(systems::setup.system())
         .add_startup_stage(
             "spawn_obstacle",

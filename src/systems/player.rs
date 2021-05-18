@@ -47,6 +47,8 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
 enum PlayerAction {
     NoAction,
     Movement(i32, i32),
+    RangedTargeting,
+    SkipTurn,
 }
 
 pub enum PlayerActionEvent {
@@ -71,6 +73,10 @@ pub fn handle_key_input(
         PlayerAction::Movement(player_position.x + 1, player_position.y)
     } else if key_input.just_pressed(KeyCode::Down) {
         PlayerAction::Movement(player_position.x, player_position.y - 1)
+    } else if key_input.just_pressed(KeyCode::T) {
+        PlayerAction::RangedTargeting
+    } else if key_input.just_pressed(KeyCode::S) {
+        PlayerAction::SkipTurn
     } else {
         PlayerAction::NoAction
     };
@@ -91,10 +97,13 @@ pub fn handle_key_input(
                 None => player_action_writer.send(PlayerActionEvent::Move(x, y)),
             }
         }
+        PlayerAction::RangedTargeting => {
+            info!(msg = "switching to RangedTargeting state");
+            game_state.set(GameState::RangedTargeting).unwrap();
+        }
+        PlayerAction::SkipTurn => game_state.set(GameState::EnemyTurn).unwrap(),
         PlayerAction::NoAction => (),
     }
-
-    action = PlayerAction::NoAction;
 }
 
 pub fn player_move_or_attack(
