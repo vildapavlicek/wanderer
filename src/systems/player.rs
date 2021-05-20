@@ -1,3 +1,4 @@
+use crate::components::PlayerCamera;
 use crate::resources::GameState;
 /// Systems related to the player
 use crate::{
@@ -32,14 +33,18 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
     commands
         .spawn_bundle(SpriteBundle {
             material: materials.player_material.clone(),
-            sprite: Sprite::new(Vec2::new(10., 10.)),
-            transform: Transform::from_xyz(0., 0., 1.),
+            sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
+            transform: Transform::from_xyz(0., 0., super::PLAYER_LAYER),
             ..Default::default()
         })
         .insert(Player)
-        .insert(Position { x: 1, y: 1 })
+        .insert(Position {
+            x: super::PLAYER_INIT_X,
+            y: super::PLAYER_INIT_Y,
+        })
         .insert(Size::square(0.8))
-        .insert(Health::new(PLAYER_INIT_MAX_HEALTH));
+        .insert(Health::new(PLAYER_INIT_MAX_HEALTH))
+        .insert(Blocking::player());
 }
 
 /// This is used to map key to action
@@ -110,15 +115,34 @@ pub fn player_move_or_attack(
     mut game_state: ResMut<State<GameState>>,
     mut commands: Commands,
     mut player_action_reader: EventReader<PlayerActionEvent>,
-    mut player_position: Query<&mut Position, With<Player>>,
+    mut player_camera_pos: QuerySet<(
+        Query<&mut Position, With<Player>>,
+        Query<&mut Position, With<PlayerCamera>>,
+    )>,
     mut enemies: Query<(Entity, &mut Health), With<Enemy>>,
+    map: Res<crate::systems::grid::Map>,
 ) {
-    let change_state = match player_action_reader.iter().next() {
+    match player_action_reader.iter().next() {
         Some(PlayerActionEvent::Move(x, y)) => {
-            let mut pos = player_position.single_mut().unwrap();
-            pos.x = *x;
-            pos.y = *y;
-            true
+            let mut player_pos = player_camera_pos.q0_mut().single_mut().unwrap();
+
+            if (*x < 0 || *y < 0) {
+                return;
+            }
+
+            if *y >= map.y_size as i32 {
+                return;
+            };
+
+            if *x >= map.x_size as i32 {
+                return;
+            };
+
+            player_pos.update(*x, *y);
+
+            let mut camera_pos = player_camera_pos.q1_mut().single_mut().unwrap();
+            camera_pos.update(*x, *y);
+            game_state.set(GameState::EnemyTurn).unwrap();
         }
         Some(PlayerActionEvent::Attack(target)) => {
             if let Some((entity, mut health)) =
@@ -129,12 +153,8 @@ pub fn player_move_or_attack(
                     commands.entity(entity).despawn();
                 }
             };
-            true
+            game_state.set(GameState::EnemyTurn).unwrap();
         }
-        None => false,
+        None => (),
     };
-
-    if change_state {
-        game_state.set(GameState::EnemyTurn).unwrap();
-    }
 }
