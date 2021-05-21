@@ -11,4 +11,5 @@ pub struct Materials {
     pub obstacle_material: Handle<ColorMaterial>,
     pub enemy_material: Handle<ColorMaterial>,
     pub floor_material: Handle<ColorMaterial>,
+    pub flamey_sprite_sheet: Handle<TextureAtlas>,
 }
