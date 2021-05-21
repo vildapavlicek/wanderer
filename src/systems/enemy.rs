@@ -1,4 +1,4 @@
-use crate::components::{Blocking, Enemy, Health, Player, Position};
+use crate::components::{Blocking, Enemy, Health, Player};
 use crate::resources::GameState;
 use crate::systems::grid::Map;
 use bevy::prelude::*;
@@ -28,41 +28,46 @@ struct NPCAction {}
 
 #[derive(Debug)]
 pub enum NPCActionType {
-    Move { entity: Entity, x: i32, y: i32 },
+    Move { entity: Entity, x: f32, y: f32 },
     Attack(Entity),
     RevertDirection(Entity),
 }
 
 pub fn enemy_turn(
-    player: Query<(Entity, &Position), With<Player>>,
-    movers: Query<(Entity, &Position, &MoveDirection), With<Enemy>>,
-    blockers: Query<(&Position, &Blocking)>,
+    player: Query<(Entity, &Transform), With<Player>>,
+    movers: Query<(Entity, &Transform, &MoveDirection), With<Enemy>>,
+    blockers: Query<(&Transform, &Blocking)>,
 ) -> Vec<NPCActionType> {
     let mut to_move: Vec<NPCActionType> = vec![];
 
     let (player_entity, player_pos) = player.single().expect("no player entity");
 
     for (entity, mover_pos, move_direction) in movers.iter() {
-        if mover_pos.x + 1 == player_pos.x && mover_pos.y == player_pos.y {
+        if mover_pos.translation.x + super::MOVE_SIZE == player_pos.translation.x
+            && mover_pos.translation.y == player_pos.translation.y
+        {
             to_move.push(NPCActionType::Attack(player_entity));
             break;
         }
 
         let future_x = match *move_direction {
-            MoveDirection::Left => mover_pos.x - 1,
-            MoveDirection::Right => mover_pos.x + 1,
+            MoveDirection::Left => mover_pos.translation.x - super::MOVE_SIZE,
+            MoveDirection::Right => mover_pos.translation.x + super::MOVE_SIZE,
         };
 
         let is_blocked = blockers
             .iter()
-            .find(|(blocker_pos, _)| blocker_pos.x == future_x && blocker_pos.y == mover_pos.y)
+            .find(|(blocker_pos, _)| {
+                blocker_pos.translation.x == future_x
+                    && blocker_pos.translation.y == mover_pos.translation.y
+            })
             .is_some();
 
         if !is_blocked {
             to_move.push(NPCActionType::Move {
                 entity,
                 x: future_x,
-                y: mover_pos.y,
+                y: mover_pos.translation.y,
             })
         } else {
             to_move.push(NPCActionType::RevertDirection(entity))
@@ -74,7 +79,7 @@ pub fn enemy_turn(
 
 pub fn enemy_move(
     In(to_move): In<Vec<NPCActionType>>,
-    mut q: Query<(&mut Position, &mut MoveDirection)>,
+    mut q: Query<(&mut Transform, &mut MoveDirection)>,
     mut targets: Query<(Entity, &mut Health), With<Player>>,
     map: Res<Map>,
     mut game_state: ResMut<State<GameState>>,
@@ -89,7 +94,7 @@ pub fn enemy_move(
                 if is_out_of_bounds(*x, *y, map.x_size as i32, map.y_size as i32) {
                     *move_direction = move_direction.opposite();
                 } else {
-                    position.x = *x;
+                    position.translation.x = *x;
                 }
             }
             NPCActionType::Attack(_target) => {
@@ -106,6 +111,6 @@ pub fn enemy_move(
     game_state.set(GameState::PlayerTurn);
 }
 
-fn is_out_of_bounds(x: i32, y: i32, max_x: i32, max_y: i32) -> bool {
-    x < 0 || x >= max_x || y < 0 || y >= max_y
+fn is_out_of_bounds(x: f32, y: f32, max_x: i32, max_y: i32) -> bool {
+    x < 0. || x >= (max_x * 32) as f32 || y < 0. || y >= (max_y * 32) as f32
 }

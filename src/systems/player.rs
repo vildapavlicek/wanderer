@@ -2,7 +2,7 @@ use crate::components::PlayerCamera;
 use crate::resources::GameState;
 /// Systems related to the player
 use crate::{
-    components::{Blocking, BlockingType, Enemy, Health, Player, Position, Size},
+    components::{Blocking, BlockingType, Enemy, Health, Player, Size},
     resources::Materials,
     systems::PlayerSystems,
 };
@@ -38,10 +38,6 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
             ..Default::default()
         })
         .insert(Player)
-        .insert(Position {
-            x: super::PLAYER_INIT_X,
-            y: super::PLAYER_INIT_Y,
-        })
         .insert(Size::square(0.8))
         .insert(Health::new(PLAYER_INIT_MAX_HEALTH))
         .insert(Blocking::player());
@@ -51,13 +47,13 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
 #[derive(Debug)]
 enum PlayerAction {
     NoAction,
-    Movement(i32, i32),
+    Movement(f32, f32),
     RangedTargeting,
     SkipTurn,
 }
 
 pub enum PlayerActionEvent {
-    Move(i32, i32),
+    Move(f32, f32),
     Attack(Entity),
 }
 
@@ -65,19 +61,31 @@ pub fn handle_key_input(
     mut game_state: ResMut<State<GameState>>,
     mut key_input: ResMut<Input<KeyCode>>,
     mut player_action_writer: EventWriter<PlayerActionEvent>,
-    player_position: Query<&Position, With<Player>>,
-    blocker_position: Query<(Entity, &Position, &Blocking)>,
+    player_position: Query<(&Transform), With<Player>>,
+    blocker_position: Query<(Entity, &Transform, &Blocking)>,
 ) {
     let player_position = player_position.single().expect("no player position!!");
 
     let mut action = if key_input.just_pressed(KeyCode::Left) {
-        PlayerAction::Movement(player_position.x - 1, player_position.y)
+        PlayerAction::Movement(
+            player_position.translation.x - super::MOVE_SIZE,
+            player_position.translation.y,
+        )
     } else if key_input.just_pressed(KeyCode::Up) {
-        PlayerAction::Movement(player_position.x, player_position.y + 1)
+        PlayerAction::Movement(
+            player_position.translation.x,
+            player_position.translation.y + super::MOVE_SIZE,
+        )
     } else if key_input.just_pressed(KeyCode::Right) {
-        PlayerAction::Movement(player_position.x + 1, player_position.y)
+        PlayerAction::Movement(
+            player_position.translation.x + super::MOVE_SIZE,
+            player_position.translation.y,
+        )
     } else if key_input.just_pressed(KeyCode::Down) {
-        PlayerAction::Movement(player_position.x, player_position.y - 1)
+        PlayerAction::Movement(
+            player_position.translation.x,
+            player_position.translation.y - super::MOVE_SIZE,
+        )
     } else if key_input.just_pressed(KeyCode::T) {
         PlayerAction::RangedTargeting
     } else if key_input.just_pressed(KeyCode::S) {
@@ -91,10 +99,12 @@ pub fn handle_key_input(
 
     match action {
         PlayerAction::Movement(x, y) => {
+            let future_pos = Vec3::new(x, y, super::PLAYER_LAYER);
             match blocker_position
                 .iter()
-                .find(|(entity, pos, blocking)| (pos.x == x) && (pos.y == y))
-            {
+                .find(|(entity, blocker_pos, blocking)| {
+                    (blocker_pos.translation.x == x) && (blocker_pos.translation.y == y)
+                }) {
                 Some((entity, _, blocking)) if blocking.is_attackable() => {
                     player_action_writer.send(PlayerActionEvent::Attack(entity))
                 }
@@ -103,7 +113,6 @@ pub fn handle_key_input(
             }
         }
         PlayerAction::RangedTargeting => {
-            info!(msg = "switching to RangedTargeting state");
             game_state.set(GameState::RangedTargeting).unwrap();
         }
         PlayerAction::SkipTurn => game_state.set(GameState::EnemyTurn).unwrap(),
@@ -116,8 +125,8 @@ pub fn player_move_or_attack(
     mut commands: Commands,
     mut player_action_reader: EventReader<PlayerActionEvent>,
     mut player_camera_pos: QuerySet<(
-        Query<&mut Position, With<Player>>,
-        Query<&mut Position, With<PlayerCamera>>,
+        Query<&mut Transform, With<Player>>,
+        Query<&mut Transform, With<PlayerCamera>>,
     )>,
     mut enemies: Query<(Entity, &mut Health), With<Enemy>>,
     map: Res<crate::systems::grid::Map>,
@@ -125,23 +134,24 @@ pub fn player_move_or_attack(
     match player_action_reader.iter().next() {
         Some(PlayerActionEvent::Move(x, y)) => {
             let mut player_pos = player_camera_pos.q0_mut().single_mut().unwrap();
-
-            if (*x < 0 || *y < 0) {
+            //
+            if (*x < 0. || *y < 0.) {
                 return;
             }
 
-            if *y >= map.y_size as i32 {
+            if *y >= map.y_size as f32 * super::MOVE_SIZE {
                 return;
             };
 
-            if *x >= map.x_size as i32 {
+            if *x >= map.x_size as f32 * super::MOVE_SIZE {
                 return;
             };
 
-            player_pos.update(*x, *y);
+            // player_pos.update(*x, *y);
+            player_pos.translation = Vec3::new(*x, *y, player_pos.translation.z);
 
             let mut camera_pos = player_camera_pos.q1_mut().single_mut().unwrap();
-            camera_pos.update(*x, *y);
+            camera_pos.translation = Vec3::new(*x, *y, camera_pos.translation.z);
             game_state.set(GameState::EnemyTurn).unwrap();
         }
         Some(PlayerActionEvent::Attack(target)) => {

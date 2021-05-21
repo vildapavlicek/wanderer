@@ -1,4 +1,4 @@
-use crate::components::{Blocking, Enemy, Health, Position, Size};
+use crate::components::{Blocking, Enemy, Health, Size};
 use crate::resources::Materials;
 use crate::systems::enemy::MoveDirection;
 use bevy::prelude::*;
@@ -68,27 +68,25 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     let map = Map::new(20, 20);
 
     for (idx, char) in map.layout.iter().enumerate() {
-        let coords = idx_to_pos(idx, map.x_size, map.y_size);
+        let (x, y) = idx_to_pos(idx, map.x_size, map.y_size);
 
         // we want to always spawn floor!
         cmd.spawn_bundle(SpriteBundle {
             material: materials.floor_material.clone(),
             sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
-            transform: Transform::from_xyz(0., 0., super::FLOOR_LAYER),
+            transform: Transform::from_xyz(to_coords(x), to_coords(y), super::FLOOR_LAYER),
             ..Default::default()
-        })
-        .insert(Position::from(coords));
+        });
 
         match *char {
             ENEMY => {
                 cmd.spawn_bundle(SpriteSheetBundle {
                     texture_atlas: materials.flamey_sprite_sheet.clone(),
                     // sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
-                    transform: Transform::from_xyz(0., 0., super::MONSTER_LAYER),
+                    transform: Transform::from_xyz(to_coords(x), to_coords(y), super::PLAYER_LAYER),
                     ..Default::default()
                 })
                 .insert(Blocking::enemy())
-                .insert(Position::from(coords))
                 .insert(Health::new(2))
                 .insert(Enemy)
                 .insert(MoveDirection::Right)
@@ -98,11 +96,10 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                 cmd.spawn_bundle(SpriteBundle {
                     material: materials.obstacle_material.clone(),
                     sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
-                    transform: Transform::from_xyz(0., 0., super::MONSTER_LAYER),
+                    transform: Transform::from_xyz(to_coords(x), to_coords(y), super::PLAYER_LAYER),
                     ..Default::default()
                 })
-                .insert(Blocking::obstacle())
-                .insert(Position::from(coords));
+                .insert(Blocking::obstacle());
             }
             _ => (),
         }
@@ -112,18 +109,9 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
 }
 
 fn idx_to_pos(idx: usize, x_size: usize, y_size: usize) -> (i32, i32) {
-    // let idx = idx + 1;
     ((idx % x_size) as i32, (idx / y_size) as i32)
 }
 
-pub fn position_translation(mut q: Query<(&Position, &mut Transform)>) {
-    for (position, mut transform) in q.iter_mut() {
-        let x = to_coords(position.x);
-        let y = to_coords(position.y);
-        transform.translation = Vec3::new(x, y, transform.translation.z);
-    }
-}
-
 fn to_coords(x: i32) -> f32 {
-    x as f32 * 32. - 16. //- (640. / 2.) /* - 16.*/
+    x as f32 * 32. /*- 16.*/
 }
