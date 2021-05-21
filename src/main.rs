@@ -32,16 +32,6 @@ fn main() {
             "generate_map",
             SystemStage::single(systems::grid::generate_map.system()),
         )
-        // .add_startup_system(
-        //     systems::grid::generate_map
-        //         .system()
-        //         .label(SetupOrder::Map)
-        //         .after(SetupOrder::Setup),
-        // )
-        // .add_startup_stage(
-        //     "spawn_obstacle",
-        //     SystemStage::single(obstacle::spawn_obstacles.system()),
-        // )
         .add_system_set(
             SystemSet::on_update(GameState::EnemyTurn).with_system(
                 systems::enemy::enemy_turn
@@ -49,6 +39,7 @@ fn main() {
                     .chain(systems::enemy::enemy_move.system()),
             ), // .after(PlayerSystems::PlayerMovement),
         )
+        .add_system(systems::animation.system())
         .add_system_set_to_stage(
             CoreStage::PostUpdate,
             SystemSet::new().with_system(systems::grid::position_translation.system()), // .with_system(systems::grid::size_scaling.system()),

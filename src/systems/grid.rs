@@ -81,9 +81,9 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
 
         match *char {
             ENEMY => {
-                cmd.spawn_bundle(SpriteBundle {
-                    material: materials.enemy_material.clone(),
-                    sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
+                cmd.spawn_bundle(SpriteSheetBundle {
+                    texture_atlas: materials.flamey_sprite_sheet.clone(),
+                    // sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
                     transform: Transform::from_xyz(0., 0., super::MONSTER_LAYER),
                     ..Default::default()
                 })
@@ -91,7 +91,8 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                 .insert(Position::from(coords))
                 .insert(Health::new(2))
                 .insert(Enemy)
-                .insert(MoveDirection::Right);
+                .insert(MoveDirection::Right)
+                .insert(Timer::from_seconds(0.1, true));
             }
             WALL => {
                 cmd.spawn_bundle(SpriteBundle {
