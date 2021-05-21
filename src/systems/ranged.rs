@@ -1,13 +1,6 @@
 use crate::components::{Enemy, Health, PlayerCamera};
 use crate::resources::GameState;
-use bevy::input::mouse::MouseButtonInput;
 use bevy::prelude::*;
-
-#[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
-pub enum RangedAttackOrder {
-    Target,
-    Attack,
-}
 
 pub struct RangedPlugin;
 
@@ -28,7 +21,7 @@ pub struct RangedAttackEvent {
 }
 
 #[derive(Default, Debug)]
-pub struct TargetArea {
+pub struct TargetLocation {
     x: f32,
     y: f32,
 }
@@ -36,14 +29,16 @@ pub struct TargetArea {
 pub fn targeting(
     windows: Res<Windows>,
     mut game_state: ResMut<State<GameState>>,
-    mut target: Local<TargetArea>,
+    mut target: Local<TargetLocation>,
     mut key_input: ResMut<Input<KeyCode>>,
-    mut mouse_input: ResMut<Input<MouseButton>>,
+    mouse_input: ResMut<Input<MouseButton>>,
     q_camera: Query<&Transform, With<PlayerCamera>>,
 ) -> Option<RangedAttackEvent> {
     if key_input.just_pressed(KeyCode::Escape) {
         key_input.update();
-        game_state.set(GameState::PlayerTurn);
+        game_state
+            .set(GameState::PlayerTurn)
+            .expect("failed to set GameState to PlayerTurn");
         return None;
     }
 
@@ -64,7 +59,7 @@ pub fn targeting(
         // apply the camera transform
         let pos_wld = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
 
-        *target = TargetArea {
+        *target = TargetLocation {
             x: pos_wld.x,
             y: pos_wld.y,
         };
@@ -87,7 +82,7 @@ fn ranged_attack(
 ) {
     if let Some(attack_target) = target {
         let (x, y) = get_coords(attack_target.x, attack_target.y);
-        if let Some((entity, pos, mut health)) = query
+        if let Some((entity, _, mut health)) = query
             .iter_mut()
             .find(|(_, transform, _)| transform.translation.x == x && transform.translation.y == y)
         {

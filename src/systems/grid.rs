@@ -1,4 +1,4 @@
-use crate::components::{Blocking, Enemy, Health, Size};
+use crate::components::{Blocking, Enemy, Health};
 use crate::resources::Materials;
 use crate::systems::enemy::MoveDirection;
 use bevy::prelude::*;
@@ -83,7 +83,11 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                 cmd.spawn_bundle(SpriteSheetBundle {
                     texture_atlas: materials.flamey_sprite_sheet.clone(),
                     // sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
-                    transform: Transform::from_xyz(to_coords(x), to_coords(y), super::PLAYER_LAYER),
+                    transform: Transform::from_xyz(
+                        to_coords(x),
+                        to_coords(y),
+                        super::MONSTER_LAYER,
+                    ),
                     ..Default::default()
                 })
                 .insert(Blocking::enemy())
@@ -96,7 +100,11 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                 cmd.spawn_bundle(SpriteBundle {
                     material: materials.obstacle_material.clone(),
                     sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
-                    transform: Transform::from_xyz(to_coords(x), to_coords(y), super::PLAYER_LAYER),
+                    transform: Transform::from_xyz(
+                        to_coords(x),
+                        to_coords(y),
+                        super::MONSTER_LAYER,
+                    ),
                     ..Default::default()
                 })
                 .insert(Blocking::obstacle());

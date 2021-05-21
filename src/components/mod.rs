@@ -45,29 +45,6 @@ pub enum BlockingType {
     Player,
 }
 
-// #[derive(Default, Copy, Clone, Eq, PartialEq, Hash, Debug)]
-// pub struct Position {
-//     pub x: i32,
-//     pub y: i32,
-// }
-//
-// impl Position {
-//     pub fn new(x: i32, y: i32) -> Self {
-//         Position { x, y }
-//     }
-//
-//     pub fn update(&mut self, x: i32, y: i32) {
-//         self.x = x;
-//         self.y = y;
-//     }
-// }
-//
-// impl From<(i32, i32)> for Position {
-//     fn from((x, y): (i32, i32)) -> Self {
-//         Position { x, y }
-//     }
-// }
-
 pub struct Size {
     pub width: f32,
     pub height: f32,
@@ -90,11 +67,7 @@ pub struct Health {
 
 impl Health {
     pub fn new(max: i32) -> Self {
-        Health {
-            // todo we should fix this
-            current: max,
-            max,
-        }
+        Health { current: max, max }
     }
 }
 

@@ -2,7 +2,6 @@ use crate::components::{Blocking, Enemy, Health, Player};
 use crate::resources::GameState;
 use crate::systems::grid::Map;
 use bevy::prelude::*;
-use std::ops::{Deref, DerefMut};
 
 pub enum MoveDirection {
     Left,
@@ -23,8 +22,6 @@ impl std::default::Default for MoveDirection {
         MoveDirection::Left
     }
 }
-
-struct NPCAction {}
 
 #[derive(Debug)]
 pub enum NPCActionType {
@@ -108,7 +105,9 @@ pub fn enemy_move(
             }
         }
     }
-    game_state.set(GameState::PlayerTurn);
+    game_state
+        .set(GameState::PlayerTurn)
+        .expect("failed to set GameState to PlayerTurn");
 }
 
 fn is_out_of_bounds(x: f32, y: f32, max_x: i32, max_y: i32) -> bool {

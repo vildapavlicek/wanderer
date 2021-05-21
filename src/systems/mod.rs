@@ -6,9 +6,6 @@ pub mod ranged;
 use crate::components::PlayerCamera;
 use bevy::prelude::*;
 
-const PLAYER_INIT_X: i32 = 1;
-const PLAYER_INIT_Y: i32 = 1;
-
 const SPRITE_SIZE: f32 = 32.;
 const FLOOR_LAYER: f32 = 0.;
 const ITEM_LAYER: f32 = 1.;
@@ -16,8 +13,6 @@ const MONSTER_LAYER: f32 = 2.;
 const PLAYER_LAYER: f32 = 3.;
 
 const MOVE_SIZE: f32 = 32.;
-
-static SPRITE_SIZE_VEC2: (f32, f32) = (32., 32.);
 
 #[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum PlayerSystems {
