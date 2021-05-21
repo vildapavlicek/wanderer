@@ -26,7 +26,7 @@ fn main() {
         .add_state(GameState::PlayerTurn)
         .add_plugins(DefaultPlugins)
         .add_plugin(player::PlayerPlugins)
-        // .add_plugin(ranged::RangedPlugin)
+        .add_plugin(ranged::RangedPlugin)
         .add_startup_system(systems::setup.system())
         .add_startup_stage(
             "generate_map",
