@@ -5,14 +5,8 @@ mod resources;
 mod systems;
 
 use crate::resources::GameState;
-use crate::systems::{player, ranged, PlayerSystems};
+use crate::systems::{player, ranged};
 use bevy::prelude::*;
-
-#[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
-enum SetupOrder {
-    Setup,
-    Map,
-}
 
 fn main() {
     App::build()
@@ -26,7 +20,7 @@ fn main() {
         .add_state(GameState::PlayerTurn)
         .add_plugins(DefaultPlugins)
         .add_plugin(player::PlayerPlugins)
-        // .add_plugin(ranged::RangedPlugin)
+        .add_plugin(ranged::RangedPlugin)
         .add_startup_system(systems::setup.system())
         .add_startup_stage(
             "generate_map",
@@ -37,7 +31,7 @@ fn main() {
                 systems::enemy::enemy_turn
                     .system()
                     .chain(systems::enemy::enemy_move.system()),
-            ), // .after(PlayerSystems::PlayerMovement),
+            ),
         )
         .add_system(systems::animation.system())
         .run();

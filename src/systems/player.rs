@@ -2,13 +2,13 @@ use crate::components::PlayerCamera;
 use crate::resources::GameState;
 /// Systems related to the player
 use crate::{
-    components::{Blocking, BlockingType, Enemy, Health, Player, Size},
+    components::{Blocking, Enemy, Health, Player, Size},
     resources::Materials,
     systems::PlayerSystems,
 };
 use bevy::prelude::*;
 
-pub const PLAYER_INIT_MAX_HEALTH: i32 = 100;
+pub const PLAYER_MAX_HEALTH: i32 = 100;
 
 pub struct PlayerPlugins;
 
@@ -39,7 +39,7 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
         })
         .insert(Player)
         .insert(Size::square(0.8))
-        .insert(Health::new(PLAYER_INIT_MAX_HEALTH))
+        .insert(Health::new(PLAYER_MAX_HEALTH))
         .insert(Blocking::player());
 }
 
@@ -61,12 +61,12 @@ pub fn handle_key_input(
     mut game_state: ResMut<State<GameState>>,
     mut key_input: ResMut<Input<KeyCode>>,
     mut player_action_writer: EventWriter<PlayerActionEvent>,
-    player_position: Query<(&Transform), With<Player>>,
+    player_position: Query<&Transform, With<Player>>,
     blocker_position: Query<(Entity, &Transform, &Blocking)>,
 ) {
     let player_position = player_position.single().expect("no player position!!");
 
-    let mut action = if key_input.just_pressed(KeyCode::Left) {
+    let action = if key_input.just_pressed(KeyCode::Left) {
         PlayerAction::Movement(
             player_position.translation.x - super::MOVE_SIZE,
             player_position.translation.y,
@@ -99,12 +99,9 @@ pub fn handle_key_input(
 
     match action {
         PlayerAction::Movement(x, y) => {
-            let future_pos = Vec3::new(x, y, super::PLAYER_LAYER);
-            match blocker_position
-                .iter()
-                .find(|(entity, blocker_pos, blocking)| {
-                    (blocker_pos.translation.x == x) && (blocker_pos.translation.y == y)
-                }) {
+            match blocker_position.iter().find(|(_, blocker_pos, _)| {
+                (blocker_pos.translation.x == x) && (blocker_pos.translation.y == y)
+            }) {
                 Some((entity, _, blocking)) if blocking.is_attackable() => {
                     player_action_writer.send(PlayerActionEvent::Attack(entity))
                 }
@@ -135,7 +132,7 @@ pub fn player_move_or_attack(
         Some(PlayerActionEvent::Move(x, y)) => {
             let mut player_pos = player_camera_pos.q0_mut().single_mut().unwrap();
             //
-            if (*x < 0. || *y < 0.) {
+            if *x < 0. || *y < 0. {
                 return;
             }
 
