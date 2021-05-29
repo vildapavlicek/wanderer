@@ -1,8 +1,10 @@
-use crate::components::PlayerCamera;
 use crate::resources::GameState;
 /// Systems related to the player
 use crate::{
-    components::{Blocking, Enemy, Health, Player, Size},
+    components::{
+        player::{Player, PlayerBundle, PlayerCamera},
+        Blocking, Enemy, Health,
+    },
     resources::Materials,
     systems::PlayerSystems,
 };
@@ -37,10 +39,7 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
             transform: Transform::from_xyz(0., 0., super::PLAYER_LAYER),
             ..Default::default()
         })
-        .insert(Player)
-        .insert(Size::square(0.8))
-        .insert(Health::new(PLAYER_MAX_HEALTH))
-        .insert(Blocking::player());
+        .insert_bundle(PlayerBundle::new(10));
 }
 
 /// This is used to map key to action
@@ -162,6 +161,7 @@ pub fn player_move_or_attack(
             };
             game_state.set(GameState::EnemyTurn).unwrap();
         }
-        None => (),
+        // None => (),
+        _ => (),
     };
 }

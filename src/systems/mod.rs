@@ -3,7 +3,7 @@ pub mod grid;
 pub mod player;
 pub mod ranged;
 
-use crate::components::PlayerCamera;
+use crate::components::player::PlayerCamera;
 use bevy::prelude::*;
 
 const SPRITE_SIZE: f32 = 32.;
