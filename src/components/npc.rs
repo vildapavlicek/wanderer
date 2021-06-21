@@ -12,7 +12,9 @@ pub struct Npc {
 pub struct MeeleeEnemy {
     name: super::Name,
     race: super::Race,
+    // probably won't need level, or just internally as it should be player level + monster strength
     level: super::Level,
+    monster_strength: MonsterStrength,
     blocking: super::Blocking,
     _h: super::Enemy,
 

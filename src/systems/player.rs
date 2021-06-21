@@ -10,8 +10,6 @@ use crate::{
 };
 use bevy::prelude::*;
 
-pub const PLAYER_MAX_HEALTH: i32 = 100;
-
 pub struct PlayerPlugins;
 
 impl Plugin for PlayerPlugins {

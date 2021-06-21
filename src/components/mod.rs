@@ -128,6 +128,16 @@ pub enum WeaponType {
     Gun,
 }
 
+macro_rules! stat_fmt {
+    ($stat: ident) => {
+        impl std::fmt::Display for $stat {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}: {}", std::stringify!($stat), self.0)
+            }
+        }
+    };
+}
+
 #[derive(Debug)]
 pub struct Strength(usize);
 impl Add<Strength> for usize {
@@ -199,6 +209,11 @@ impl Add<Intelligence> for i32 {
         self + rhs.0 as i32
     }
 }
+
+stat_fmt!(Strength);
+stat_fmt!(Agility);
+stat_fmt!(Endurance);
+stat_fmt!(Intelligence);
 
 #[derive(Bundle)]
 pub struct Stats {

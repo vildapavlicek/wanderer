@@ -4,6 +4,8 @@ use bevy::prelude::Bundle;
 pub struct Player;
 pub struct PlayerCamera;
 
+pub const PLAYER_MAX_HEALTH: usize = 100;
+
 pub struct XP {
     current: usize,
     max: usize,
@@ -24,11 +26,11 @@ impl PlayerBundle {
     pub fn new(max_health: i32) -> Self {
         PlayerBundle {
             _p: Player,
-            race: super::Race::UndefinedExistence,
+            race: super::Race::Unknown,
             level: super::Level(1),
             xp: XP {
                 current: 0,
-                max: 100,
+                max: PLAYER_MAX_HEALTH,
             },
             health: super::Health::new(max_health),
             blocking: super::Blocking::player(),
