@@ -1,4 +1,4 @@
-use crate::components::{Blocking, Enemy, Health, Player};
+use crate::components::{player::Player, Blocking, Enemy, Health};
 use crate::resources::GameState;
 use crate::systems::grid::Map;
 use bevy::prelude::*;

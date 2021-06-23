@@ -1,4 +1,4 @@
-use crate::components::{Enemy, Health, PlayerCamera};
+use crate::components::{player::PlayerCamera, Enemy, Health};
 use crate::resources::GameState;
 use bevy::prelude::*;
 
