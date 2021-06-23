@@ -271,5 +271,5 @@ pub struct Armor {
     name: String,
     rarity: Rarity,
     kind: ArmorType,
-    armor: usize,
+    defense: usize,
 }

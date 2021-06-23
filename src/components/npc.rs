@@ -1,4 +1,5 @@
 use bevy::prelude::Bundle;
+use rand::Rng;
 
 #[derive(Bundle)]
 pub struct Npc {
@@ -10,6 +11,7 @@ pub struct Npc {
 
 #[derive(Bundle)]
 pub struct MeeleeEnemy {
+    health: super::Health,
     name: super::Name,
     race: super::Race,
     // probably won't need level, or just internally as it should be player level + monster strength
@@ -20,6 +22,27 @@ pub struct MeeleeEnemy {
 
     #[bundle]
     stats: super::Stats,
+}
+
+impl MeeleeEnemy {
+    pub fn new(
+        name: String,
+        max_health: usize,
+        race: super::Race,
+        level: usize,
+        stats: super::Stats,
+    ) -> Self {
+        MeeleeEnemy {
+            name: super::Name(name),
+            health: super::Health::new(max_health as i32),
+            race,
+            level: super::Level(level as i32),
+            monster_strength: MonsterStrength::random(),
+            blocking: super::Blocking::enemy(),
+            _h: super::Enemy,
+            stats,
+        }
+    }
 }
 
 pub enum MonsterStrength {
@@ -56,5 +79,10 @@ impl MonsterStrength {
             MonsterStrength::Veteran => 3,
             MonsterStrength::Boss => 5,
         }
+    }
+
+    pub fn random() -> Self {
+        let rng = rand::thread_rng().gen_range(0.0..1.0) as f32;
+        Self::get_monster_strength(rng)
     }
 }
