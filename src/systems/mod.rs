@@ -2,9 +2,11 @@ pub mod enemy;
 pub mod grid;
 pub mod player;
 pub mod ranged;
+pub mod ui;
 
 use crate::components::player::PlayerCamera;
 use bevy::prelude::*;
+use bevy_egui::EguiContext;
 
 const SPRITE_SIZE: f32 = 32.;
 const FLOOR_LAYER: f32 = 0.;
@@ -25,6 +27,7 @@ pub fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut egui_context: ResMut<EguiContext>,
 ) {
     asset_server.load_folder("images").unwrap();
     let wall_texture = asset_server.get_handle("images/wall.png");
@@ -36,6 +39,10 @@ pub fn setup(
     let flamey_handle = asset_server.get_handle("sprites/flamey.png");
     let texture_atlas = TextureAtlas::from_grid(flamey_handle, Vec2::new(32.0, 32.0), 1, 12);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+    // todo: this is only place holder, I think we might need to load it somewhere else
+    let face_handle = asset_server.load("placeholders/face.png");
+    egui_context.set_egui_texture(1, face_handle);
 
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())

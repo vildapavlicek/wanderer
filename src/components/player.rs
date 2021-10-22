@@ -14,18 +14,23 @@ pub struct XP {
 #[derive(Bundle)]
 pub struct PlayerBundle {
     _p: Player,
+    name: super::Name,
     race: super::Race,
     level: super::Level,
     xp: XP,
     health: super::Health,
     blocking: super::Blocking,
     state: super::State,
+
+    #[bundle]
+    stats: super::Stats,
 }
 
 impl PlayerBundle {
     pub fn new(max_health: i32) -> Self {
         PlayerBundle {
             _p: Player,
+            name: super::Name("ReadyPlayer1".into()),
             race: super::Race::Unknown,
             level: super::Level(1),
             xp: XP {
@@ -35,6 +40,7 @@ impl PlayerBundle {
             health: super::Health::new(max_health),
             blocking: super::Blocking::player(),
             state: super::State::default(),
+            stats: super::Stats::new(10, 5, 8, 3),
         }
     }
 }
