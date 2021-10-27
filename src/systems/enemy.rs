@@ -25,25 +25,31 @@ impl std::default::Default for MoveDirection {
 
 #[derive(Debug)]
 pub enum NPCActionType {
-    Move { entity: Entity, x: f32, y: f32 },
-    Attack(Entity),
+    Move {
+        entity: Entity,
+        x: f32,
+        y: f32,
+    },
+    /// Attack Action and attacker's details (EntityId, Name)
+    Attack(Entity, String),
     RevertDirection(Entity),
 }
 
+use crate::components::Name;
 pub fn enemy_turn(
     player: Query<(Entity, &Transform), With<Player>>,
-    movers: Query<(Entity, &Transform, &MoveDirection), With<Enemy>>,
+    movers: Query<(Entity, &Transform, &MoveDirection, &Name), With<Enemy>>,
     blockers: Query<(&Transform, &Blocking)>,
 ) -> Vec<NPCActionType> {
     let mut to_move: Vec<NPCActionType> = vec![];
 
     let (player_entity, player_pos) = player.single().expect("no player entity");
 
-    for (entity, mover_pos, move_direction) in movers.iter() {
+    for (entity, mover_pos, move_direction, name) in movers.iter() {
         if mover_pos.translation.x + super::MOVE_SIZE == player_pos.translation.x
             && mover_pos.translation.y == player_pos.translation.y
         {
-            to_move.push(NPCActionType::Attack(player_entity));
+            to_move.push(NPCActionType::Attack(player_entity, name.to_string()));
             break;
         }
 
@@ -74,33 +80,37 @@ pub fn enemy_turn(
     to_move
 }
 
+use crate::systems::ui::LogEvent;
+
 pub fn enemy_move(
     In(to_move): In<Vec<NPCActionType>>,
     mut q: Query<(&mut Transform, &mut MoveDirection)>,
     mut targets: Query<(Entity, &mut Health), With<Player>>,
     map: Res<Map>,
     mut game_state: ResMut<State<GameState>>,
+    mut log_writer: EventWriter<LogEvent>,
 ) {
-    for action_type in to_move.iter() {
+    for action_type in to_move.into_iter() {
         match action_type {
             NPCActionType::Move { entity, x, y } => {
                 let (mut position, mut move_direction) = q
-                    .get_mut(*entity)
+                    .get_mut(entity)
                     .expect("requested entity for movement not found");
 
-                if is_out_of_bounds(*x, *y, map.x_size as i32, map.y_size as i32) {
+                if is_out_of_bounds(x, y, map.x_size as i32, map.y_size as i32) {
                     *move_direction = move_direction.opposite();
                 } else {
-                    position.translation.x = *x;
+                    position.translation.x = x;
                 }
             }
-            NPCActionType::Attack(_target) => {
+            NPCActionType::Attack(_target, name) => {
                 let (_entity, mut hp) = targets.single_mut().expect("no player entity");
                 hp.current -= 1;
+                log_writer.send(LogEvent::npc_attacks_player(name, 1));
                 info!(msg = "attacked player", ?hp)
             }
             NPCActionType::RevertDirection(entity) => {
-                let (_, mut move_direction) = q.get_mut(*entity).expect("entity not found");
+                let (_, mut move_direction) = q.get_mut(entity).expect("entity not found");
                 *move_direction = move_direction.opposite();
             }
         }

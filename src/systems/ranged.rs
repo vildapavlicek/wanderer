@@ -74,19 +74,26 @@ pub fn targeting(
     }
 }
 
+// todo I think we should have single system handling all the attacks and not have one for melee and one for ranged
+use super::ui::LogEvent;
+use crate::components::Name;
 fn ranged_attack(
     In(target): In<Option<RangedAttackEvent>>,
     mut commands: Commands,
     mut game_state: ResMut<State<GameState>>,
-    mut query: Query<(Entity, &Transform, &mut Health), With<Enemy>>,
+    mut query: Query<(Entity, &Transform, &mut Health, &Name), With<Enemy>>,
+    mut log_writer: EventWriter<LogEvent>,
 ) {
     if let Some(attack_target) = target {
         let (x, y) = get_coords(attack_target.x, attack_target.y);
-        if let Some((entity, _, mut health)) = query
-            .iter_mut()
-            .find(|(_, transform, _)| transform.translation.x == x && transform.translation.y == y)
+        if let Some((entity, _, mut health, name)) =
+            query.iter_mut().find(|(_, transform, _, _)| {
+                transform.translation.x == x && transform.translation.y == y
+            })
         {
             health.current -= 1;
+
+            log_writer.send(LogEvent::player_attack(name.to_string(), 1));
 
             if health.current <= 0 {
                 commands.entity(entity).despawn();
