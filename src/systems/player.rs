@@ -114,6 +114,8 @@ pub fn handle_key_input(
     }
 }
 
+use crate::systems::ui::LogEvent;
+
 pub fn player_move_or_attack(
     mut game_state: ResMut<State<GameState>>,
     mut commands: Commands,
@@ -122,8 +124,9 @@ pub fn player_move_or_attack(
         Query<&mut Transform, With<Player>>,
         Query<&mut Transform, With<PlayerCamera>>,
     )>,
-    mut enemies: Query<(Entity, &mut Health), With<Enemy>>,
+    mut enemies: Query<(Entity, &mut Health, &crate::components::Name), With<Enemy>>,
     map: Res<crate::systems::grid::Map>,
+    mut log_writer: EventWriter<LogEvent>,
 ) {
     match player_action_reader.iter().next() {
         Some(PlayerActionEvent::Move(x, y)) => {
@@ -149,13 +152,19 @@ pub fn player_move_or_attack(
             game_state.set(GameState::EnemyTurn).unwrap();
         }
         Some(PlayerActionEvent::Attack(target)) => {
-            if let Some((entity, mut health)) =
-                enemies.iter_mut().find(|(entity, _)| entity == target)
+            if let Some((entity, mut health, name)) =
+                enemies.iter_mut().find(|(entity, _, _)| entity == target)
             {
                 health.current -= 1;
                 if health.current <= 0 {
                     commands.entity(entity).despawn();
                 }
+
+                log_writer.send(LogEvent::player_attack(
+                    // name.unwrap_or(&crate::components::Name("Unknown".into()))
+                    name.to_string(),
+                    1,
+                ));
             };
             game_state.set(GameState::EnemyTurn).unwrap();
         }

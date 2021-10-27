@@ -22,7 +22,7 @@ impl Map {
             let n = rand::thread_rng().gen_range(0.0..=1.0);
             match n {
                 _ if n > 0.9 => vec.push(ENEMY),
-                _ if n < 0.4 => vec.push(WALL),
+                _ if n < 0.1 => vec.push(WALL),
                 _ => vec.push(FLOOR),
             }
         }

@@ -2,12 +2,19 @@ pub mod npc;
 pub mod player;
 
 use bevy::prelude::Bundle;
+use std::fmt::Formatter;
 use std::ops::Add;
 
 #[derive(Debug)]
-pub struct Name(String);
+pub struct Name(pub String);
+impl std::fmt::Display for Name {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Debug)]
-pub struct Level(i32);
+pub struct Level(pub i32);
 
 #[derive(Debug)]
 pub enum State {
@@ -75,6 +82,12 @@ pub struct Health {
 }
 
 impl Health {
+    pub fn to_ui_format(&self) -> String {
+        format!("{} / {}", self.current, self.max)
+    }
+}
+
+impl Health {
     pub fn new(max: i32) -> Self {
         Health { current: max, max }
     }
@@ -90,6 +103,19 @@ pub enum Race {
     Orc,
     Goblin,
     Elemental,
+}
+
+impl std::fmt::Display for Race {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unknown => write!(f, "Unknown"),
+            Self::Human => write!(f, "Human"),
+            Self::Elf => write!(f, "Elf"),
+            Self::Orc => write!(f, "Orc"),
+            Self::Goblin => write!(f, "Goblin"),
+            Self::Elemental => write!(f, "Elemental"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -138,8 +164,19 @@ macro_rules! stat_fmt {
     };
 }
 
+macro_rules! stat_inner {
+    ($stat: ident) => {
+        impl $stat {
+            pub fn inner(&self) -> usize {
+                self.0
+            }
+        }
+    };
+}
+
 #[derive(Debug)]
 pub struct Strength(usize);
+stat_inner!(Strength);
 impl Add<Strength> for usize {
     type Output = usize;
 
@@ -158,6 +195,7 @@ impl Add<Strength> for i32 {
 
 #[derive(Debug)]
 pub struct Agility(usize);
+stat_inner!(Agility);
 impl Add<Agility> for usize {
     type Output = usize;
 
@@ -176,6 +214,7 @@ impl Add<Agility> for i32 {
 
 #[derive(Debug)]
 pub struct Endurance(usize);
+stat_inner!(Endurance);
 impl Add<Endurance> for usize {
     type Output = usize;
 
@@ -194,6 +233,7 @@ impl Add<Endurance> for i32 {
 
 #[derive(Debug)]
 pub struct Intelligence(usize);
+stat_inner!(Intelligence);
 impl Add<Intelligence> for usize {
     type Output = usize;
 
