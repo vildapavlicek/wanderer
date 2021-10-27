@@ -5,7 +5,7 @@ pub mod ranged;
 mod shared;
 pub mod ui;
 
-use crate::components::player::PlayerCamera;
+use crate::components::player::{Player, PlayerCamera};
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 
@@ -73,7 +73,7 @@ pub fn animation(
 }
 
 use crate::components::Health;
-pub fn clear_dead(mut command: Commands, bodies: Query<(Entity, &Health)>) {
+pub fn clear_dead(mut command: Commands, bodies: Query<(Entity, &Health), Without<Player>>) {
     for (entity, hp) in bodies.iter() {
         if hp.current < 0 {
             command.entity(entity).despawn();

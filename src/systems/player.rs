@@ -55,7 +55,6 @@ pub enum PlayerActionEvent {
 pub fn handle_key_input(
     mut game_state: ResMut<State<GameState>>,
     mut key_input: ResMut<Input<KeyCode>>,
-    //mut player_action_writer: EventWriter<PlayerActionEvent>,
     player_position: Query<&Transform, With<Player>>,
     blocker_position: Query<(Entity, &Transform, &Blocking)>,
 ) -> Option<PlayerActionEvent> {
@@ -126,7 +125,6 @@ use crate::systems::ui::LogEvent;
 pub fn player_move_or_attack(
     In(event): In<Option<PlayerActionEvent>>,
     mut game_state: ResMut<State<GameState>>,
-    // mut player_action_reader: EventReader<PlayerActionEvent>,
     mut player_camera_pos: QuerySet<(
         Query<&mut Transform, With<Player>>,
         Query<&mut Transform, With<PlayerCamera>>,
