@@ -109,7 +109,9 @@ pub fn handle_key_input(
         PlayerAction::RangedTargeting => {
             game_state.set(GameState::RangedTargeting).unwrap();
         }
-        PlayerAction::SkipTurn => game_state.set(GameState::EnemyTurn).unwrap(),
+        PlayerAction::SkipTurn => game_state
+            .set(GameState::EnemyTurn)
+            .expect("failed to set enemy turn after player skipping turn"),
         PlayerAction::NoAction => (),
     }
 }
@@ -118,7 +120,6 @@ use crate::systems::ui::LogEvent;
 
 pub fn player_move_or_attack(
     mut game_state: ResMut<State<GameState>>,
-    mut commands: Commands,
     mut player_action_reader: EventReader<PlayerActionEvent>,
     mut player_camera_pos: QuerySet<(
         Query<&mut Transform, With<Player>>,
@@ -130,45 +131,38 @@ pub fn player_move_or_attack(
 ) {
     match player_action_reader.iter().next() {
         Some(PlayerActionEvent::Move(x, y)) => {
-            let mut player_pos = player_camera_pos.q0_mut().single_mut().unwrap();
-            //
-            if *x < 0. || *y < 0. {
+            if super::shared::is_out_of_bounds(*x, *y, map.x_size, map.y_size) {
                 return;
             }
 
-            if *y >= map.y_size as f32 * super::MOVE_SIZE {
-                return;
-            };
-
-            if *x >= map.x_size as f32 * super::MOVE_SIZE {
-                return;
-            };
+            let mut player_pos = player_camera_pos
+                .q0_mut()
+                .single_mut()
+                .expect("no player found");
 
             // player_pos.update(*x, *y);
             player_pos.translation = Vec3::new(*x, *y, player_pos.translation.z);
 
-            let mut camera_pos = player_camera_pos.q1_mut().single_mut().unwrap();
+            let mut camera_pos = player_camera_pos
+                .q1_mut()
+                .single_mut()
+                .expect("no player camera found");
             camera_pos.translation = Vec3::new(*x, *y, camera_pos.translation.z);
-            game_state.set(GameState::EnemyTurn).unwrap();
+
+            game_state
+                .set(GameState::EnemyTurn)
+                .expect("failed to set game state to enemy turn after player movement");
         }
         Some(PlayerActionEvent::Attack(target)) => {
-            if let Some((entity, mut health, name)) =
-                enemies.iter_mut().find(|(entity, _, _)| entity == target)
-            {
+            if let Ok((_, mut health, name)) = enemies.get_mut(*target) {
                 health.current -= 1;
-                if health.current <= 0 {
-                    commands.entity(entity).despawn();
-                }
+                log_writer.send(LogEvent::player_attack(name.to_string(), 1));
+            }
 
-                log_writer.send(LogEvent::player_attack(
-                    // name.unwrap_or(&crate::components::Name("Unknown".into()))
-                    name.to_string(),
-                    1,
-                ));
-            };
-            game_state.set(GameState::EnemyTurn).unwrap();
+            game_state
+                .set(GameState::EnemyTurn)
+                .expect("failed to set game state to enemy turn after player attack");
         }
-        // None => (),
         _ => (),
     };
 }

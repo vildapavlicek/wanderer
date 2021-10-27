@@ -41,5 +41,6 @@ fn main() {
         .add_system(systems::animation.system())
         .add_system(systems::ui::update_logs.system())
         .add_system(systems::ui::ui.system())
+        .add_system(systems::clear_dead.system())
         .run();
 }

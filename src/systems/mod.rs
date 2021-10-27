@@ -2,6 +2,7 @@ pub mod enemy;
 pub mod grid;
 pub mod player;
 pub mod ranged;
+mod shared;
 pub mod ui;
 
 use crate::components::player::PlayerCamera;
@@ -67,6 +68,15 @@ pub fn animation(
         if timer.finished() {
             let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
             sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
+        }
+    }
+}
+
+use crate::components::Health;
+pub fn clear_dead(mut command: Commands, bodies: Query<(Entity, &Health)>) {
+    for (entity, hp) in bodies.iter() {
+        if hp.current < 0 {
+            command.entity(entity).despawn();
         }
     }
 }
