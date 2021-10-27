@@ -38,7 +38,7 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     let map = Map::new(20, 20);
 
     for (idx, char) in map.layout.iter().enumerate() {
-        let (x, y) = idx_to_pos(idx, map.x_size, map.y_size);
+        let (x, y) = idx_to_pos(idx, map.x_size);
 
         // we want to always spawn floor!
         cmd.spawn_bundle(SpriteBundle {
@@ -90,10 +90,10 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     cmd.insert_resource(map);
 }
 
-fn idx_to_pos(idx: usize, x_size: usize, y_size: usize) -> (i32, i32) {
-    ((idx % x_size) as i32, (idx / y_size) as i32)
+fn idx_to_pos(idx: usize, x_size: usize) -> (i32, i32) {
+    ((idx % x_size) as i32, (idx / x_size) as i32)
 }
 
 fn to_coords(x: i32) -> f32 {
-    x as f32 * 32. /*- 16.*/
+    x as f32 * 32.
 }

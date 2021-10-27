@@ -38,31 +38,31 @@ pub enum NPCActionType {
 use crate::components::Name;
 pub fn enemy_turn(
     player: Query<(Entity, &Transform), With<Player>>,
-    movers: Query<(Entity, &Transform, &MoveDirection, &Name), With<Enemy>>,
+    enemies: Query<(Entity, &Transform, &MoveDirection, &Name), With<Enemy>>,
     blockers: Query<(&Transform, &Blocking)>,
 ) -> Vec<NPCActionType> {
     let mut to_move: Vec<NPCActionType> = vec![];
 
     let (player_entity, player_pos) = player.single().expect("no player entity");
 
-    for (entity, mover_pos, move_direction, name) in movers.iter() {
-        if mover_pos.translation.x + super::MOVE_SIZE == player_pos.translation.x
-            && mover_pos.translation.y == player_pos.translation.y
+    for (entity, enemy_pos, move_direction, name) in enemies.iter() {
+        if enemy_pos.translation.x + super::MOVE_SIZE == player_pos.translation.x
+            && enemy_pos.translation.y == player_pos.translation.y
         {
             to_move.push(NPCActionType::Attack(player_entity, name.to_string()));
             break;
         }
 
         let future_x = match *move_direction {
-            MoveDirection::Left => mover_pos.translation.x - super::MOVE_SIZE,
-            MoveDirection::Right => mover_pos.translation.x + super::MOVE_SIZE,
+            MoveDirection::Left => enemy_pos.translation.x - super::MOVE_SIZE,
+            MoveDirection::Right => enemy_pos.translation.x + super::MOVE_SIZE,
         };
 
         let is_blocked = blockers
             .iter()
             .find(|(blocker_pos, _)| {
                 blocker_pos.translation.x == future_x
-                    && blocker_pos.translation.y == mover_pos.translation.y
+                    && blocker_pos.translation.y == enemy_pos.translation.y
             })
             .is_some();
 
@@ -70,7 +70,7 @@ pub fn enemy_turn(
             to_move.push(NPCActionType::Move {
                 entity,
                 x: future_x,
-                y: mover_pos.translation.y,
+                y: enemy_pos.translation.y,
             })
         } else {
             to_move.push(NPCActionType::RevertDirection(entity))
@@ -97,7 +97,7 @@ pub fn enemy_move(
                     .get_mut(entity)
                     .expect("requested entity for movement not found");
 
-                if is_out_of_bounds(x, y, map.x_size as i32, map.y_size as i32) {
+                if super::shared::is_out_of_bounds(x, y, map.x_size, map.y_size) {
                     *move_direction = move_direction.opposite();
                 } else {
                     position.translation.x = x;
@@ -118,8 +118,4 @@ pub fn enemy_move(
     game_state
         .set(GameState::PlayerTurn)
         .expect("failed to set GameState to PlayerTurn");
-}
-
-fn is_out_of_bounds(x: f32, y: f32, max_x: i32, max_y: i32) -> bool {
-    x < 0. || x >= (max_x * 32) as f32 || y < 0. || y >= (max_y * 32) as f32
 }
