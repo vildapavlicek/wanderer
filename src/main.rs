@@ -1,4 +1,5 @@
 #![windows_subsystem = "windows"] // disables console window
+#![deny(clippy::float_cmp)]
 mod components;
 mod events;
 mod resources;

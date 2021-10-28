@@ -130,14 +130,14 @@ pub fn player_move_or_attack(
         Query<&mut Transform, With<PlayerCamera>>,
     )>,
     mut enemies: Query<(Entity, &mut Health, &crate::components::Name), With<Enemy>>,
-    map: Res<crate::systems::grid::Map>,
+    // map: Res<crate::systems::grid::Map>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
     match event {
         Some(PlayerActionEvent::Move(x, y)) => {
-            if super::shared::is_out_of_bounds(x, y, map.x_size, map.y_size) {
+            /* if super::shared::is_out_of_bounds(x, y, map.x_size, map.y_size) {
                 return;
-            }
+            } */
 
             let mut player_pos = player_camera_pos
                 .q0_mut()
