@@ -1,10 +1,10 @@
 use crate::components::Blocking;
 use crate::resources::Materials;
-// use crate::systems::enemy::MoveDirection;
 use bevy::prelude::*;
 use bevy::utils::HashSet;
 use num_integer::Integer;
 use rand::Rng;
+use std::borrow::BorrowMut;
 
 struct Map {
     rooms: Vec<Room>,
@@ -22,37 +22,55 @@ impl Map {
 
 pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     let mut map = Map::new();
-    // let mut room = Room::new(IVec2::new(0, 0), 3, 11);
-    // room.create_rect_room(&mut map);
-    // room.create_entry_top(&mut map);
-    // room.create_entry_left(&mut map);
-    // room.create_entry_bottom(&mut map);
-    // room.create_entry_right(&mut map);
+    let mut room = Room::new(IVec2::new(0, 0), 5, 5);
+    room.create_rect_room(&mut map.tiles);
+    // room.create_entry_top(&mut map.tiles);
+    // room.create_entry_left(&mut map.tiles);
+    room.create_entry_bottom(&mut map.tiles);
+    // room.create_entry_right(&mut map.tiles);
+    map.rooms.push(room);
 
-    let mut rng = rand::thread_rng();
-    let n_rooms = rng.gen_range(10..=30);
+    let mut room = Room::new(IVec2::new(0, 10), 5, 5);
+    room.create_rect_room(&mut map.tiles);
+    room.create_entry_top(&mut map.tiles);
+    // room.create_entry_left(&mut map.tiles);
+    // room.create_entry_bottom(&mut map.tiles);
+    // room.create_entry_right(&mut map.tiles);
+    map.rooms.push(room);
 
-    for _ in 0..=n_rooms {
-        let x = rng.gen_range(-25..=25);
-        let y = rng.gen_range(-25..=25);
-        let width = rng.gen_range(1..=10);
-        let height = rng.gen_range(1..=10);
+    // ---------------------- RNG rooms
+    // let mut rng = rand::thread_rng();
+    // let n_rooms = rng.gen_range(10..=30);
+    //
+    // for _ in 0..=n_rooms {
+    //     let x = rng.gen_range(-25..=25);
+    //     let y = rng.gen_range(-25..=25);
+    //     let width = rng.gen_range(3..=10);
+    //     let height = rng.gen_range(3..=10);
+    //
+    //     map.rooms.push(Room::new(IVec2::new(x, y), height, width));
+    // }
+    //
+    // for room in map.rooms.iter_mut() {
+    //     room.create_rect_room(&mut map.tiles);
+    //     let exit_position = rng.gen();
+    //     room.create_exit_at(&mut map.tiles, exit_position);
+    // }
 
-        map.rooms.push(Room::new(IVec2::new(x, y), height, width));
-    }
+    connect_rooms(&mut map);
 
-    for room in map.rooms.iter_mut() {
-        room.create_rect_room(&mut map.tiles);
-        room.create_entries(&mut map.tiles);
-    }
-
-    for Tile { coords, kind } in map.tiles {
+    // spawn map
+    for Tile { pos, kind } in map.tiles {
         match kind {
             TileType::Wall => {
                 cmd.spawn_bundle(SpriteBundle {
                     material: materials.obstacle_material.clone(),
                     sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
-                    transform: Transform::from_xyz(coords.x, coords.y, super::MONSTER_LAYER),
+                    transform: Transform::from_xyz(
+                        to_coords(pos.x),
+                        to_coords(pos.y),
+                        super::MONSTER_LAYER,
+                    ),
                     ..Default::default()
                 })
                 .insert(Blocking::obstacle());
@@ -61,7 +79,11 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                 cmd.spawn_bundle(SpriteBundle {
                     material: materials.floor_material.clone(),
                     sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
-                    transform: Transform::from_xyz(coords.x, coords.y, super::FLOOR_LAYER),
+                    transform: Transform::from_xyz(
+                        to_coords(pos.x),
+                        to_coords(pos.y),
+                        super::FLOOR_LAYER,
+                    ),
                     ..Default::default()
                 });
             }
@@ -69,6 +91,71 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     }
 }
 
+fn connect_rooms(map: &mut Map) {
+    let rooms = map.rooms.as_slice();
+    let tiles = map.tiles.borrow_mut();
+
+    let mut iter = rooms.iter().peekable();
+    while let Some(room) = iter.next() {
+        if let Some(entry_points) = iter.peek().map(
+            |next_room| next_room.entry_points.clone(), /*todo get rid of this clone*/
+        ) {
+            let start = room
+                .entry_points
+                .first()
+                .expect("entry point not found for room");
+            let finish = entry_points
+                .first()
+                .expect("entry point not found for NEXT room");
+
+            println!(
+                "got room {:?} and next room with start {:?} and finish {:?}",
+                room, start, finish
+            );
+
+            let (mut offset_x, mut offset_y) = (0, 0);
+            println!(
+                "generating path with offset_x {} and offset_y {}",
+                offset_x, offset_y
+            );
+            while offset_x != finish.x {
+                println!("offset_x {}", offset_x);
+                let floor = Tile::floor(start.x + offset_x, start.y);
+                let top_wall = Tile::wall(start.x + offset_x, start.y + 1);
+                let bottom_wall = Tile::wall(start.x + offset_x, start.y - 1);
+
+                tiles.replace(floor);
+                tiles.insert(top_wall);
+                tiles.insert(bottom_wall);
+
+                if finish.x > offset_x {
+                    offset_x += 1;
+                } else {
+                    offset_x -= 1;
+                }
+            }
+
+            while offset_y != finish.y {
+                println!("offset_y {}", offset_y);
+                let floor = Tile::floor(offset_x, start.y + offset_y);
+                let left_wall = Tile::wall(offset_x - 1, start.y + offset_y);
+                let right_wall = Tile::wall(offset_x + 1, start.y + offset_y);
+
+                tiles.replace(floor);
+                tiles.insert(left_wall);
+                tiles.insert(right_wall);
+
+                if finish.y > offset_y {
+                    offset_y += 1;
+                } else {
+                    offset_y -= 1;
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
 struct Room {
     entry_points: Vec<IVec2>,
     height: u32,
@@ -87,21 +174,15 @@ impl Room {
     }
 
     fn create_rect_room(&self, tiles: &mut HashSet<Tile>) {
-        println!("trying to spawn room");
-        let start_x = (self.center.x - (self.width as i32 / 2) - 1);
-        let start_y = (self.center.y - (self.height as i32 / 2) - 1);
+        let start_x = self.center.x - (self.width as i32 / 2) - 1;
+        let start_y = self.center.y - (self.height as i32 / 2) - 1;
         let width = self.width as i32;
         let height = self.height as i32;
 
-        println!("spawning bottom walls");
         for i in 0..=width + 1 {
-            tiles.replace(Tile {
-                coords: Vec2::new(to_coords(start_x + i) as f32, to_coords(start_y) as f32),
-                kind: TileType::Wall,
-            });
+            tiles.replace(Tile::wall(start_x + i, start_y));
         }
 
-        println!("spawning rest of room");
         for i in 1..=height {
             tiles.replace(Tile::wall(start_x, start_y + i));
             // now spawn our floors
@@ -116,31 +197,24 @@ impl Room {
         for i in 0..=width + 1 {
             tiles.replace(Tile::wall(start_x + i, start_y + height + 1));
         }
-
-        println!("room generation finished")
     }
 
     fn create_entry_top(&mut self, tiles: &mut HashSet<Tile>) {
         let offset = i32::from(self.height.is_odd());
         let pos = IVec2::new(
             self.center.x,
-            (self.center.y + (self.height as i32 / 2) + offset),
+            self.center.y + (self.height as i32 / 2) + offset,
         );
         let tile = Tile::floor(pos.x, pos.y);
         let x = tiles.replace(tile);
         self.entry_points.push(pos);
-        println!("replaced: {:?}, pos: {:?}", x, pos);
     }
 
     fn create_entry_bottom(&mut self, tiles: &mut HashSet<Tile>) {
-        let pos = IVec2::new(
-            self.center.x,
-            (self.center.y - (self.height as i32 / 2) - 1),
-        );
+        let pos = IVec2::new(self.center.x, self.center.y - (self.height as i32 / 2) - 1);
         let tile = Tile::floor(pos.x, pos.y);
         let x = tiles.replace(tile);
         self.entry_points.push(pos);
-        println!("replaced: {:?}, pos: {:?}", x, pos);
     }
 
     fn create_entry_left(&mut self, tiles: &mut HashSet<Tile>) {
@@ -148,7 +222,6 @@ impl Room {
         let tile = Tile::floor(pos.x, pos.y);
         let x = tiles.replace(tile);
         self.entry_points.push(pos);
-        println!("replaced: {:?}, pos: {:?}", x, pos);
     }
 
     fn create_entry_right(&mut self, tiles: &mut HashSet<Tile>) {
@@ -160,7 +233,6 @@ impl Room {
         let tile = Tile::floor(pos.x, pos.y);
         let x = tiles.replace(tile);
         self.entry_points.push(pos);
-        println!("replaced: {:?}, pos: {:?}", x, pos);
     }
 
     fn create_entries(&mut self, tiles: &mut HashSet<Tile>) {
@@ -169,6 +241,15 @@ impl Room {
         self.create_entry_left(tiles);
         self.create_entry_bottom(tiles);
         self.create_entry_right(tiles);
+    }
+
+    fn create_exit_at(&mut self, tiles: &mut HashSet<Tile>, exit_pos: ExitPosition) {
+        match exit_pos {
+            ExitPosition::Left => self.create_entry_left(tiles),
+            ExitPosition::Top => self.create_entry_top(tiles),
+            ExitPosition::Right => self.create_entry_right(tiles),
+            ExitPosition::Bottom => self.create_entry_bottom(tiles),
+        }
     }
 }
 
@@ -184,51 +265,70 @@ enum TileType {
 
 #[derive(Debug)]
 struct Tile {
-    coords: Vec2,
+    pos: IVec2,
     kind: TileType,
 }
 
 impl Tile {
-    fn wall(x: i32, y: i32) -> Self {
+    fn new(x: i32, y: i32, kind: TileType) -> Self {
         Tile {
-            coords: Vec2::new(to_coords(x), to_coords(y)),
-            kind: TileType::Wall,
+            pos: IVec2::new(x, y),
+            kind,
         }
+    }
+    fn wall(x: i32, y: i32) -> Self {
+        Self::new(x, y, TileType::Wall)
     }
 
     fn floor(x: i32, y: i32) -> Self {
-        Tile {
-            coords: Vec2::new(to_coords(x), to_coords(y)),
-            kind: TileType::Floor,
-        }
+        Self::new(x, y, TileType::Floor)
     }
 }
 
 use std::hash::{Hash, Hasher};
 impl std::hash::Hash for Tile {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        (self.coords.x as i32).hash(state);
-        (self.coords.y as i32).hash(state);
+        (self.pos.x as i32).hash(state);
+        (self.pos.y as i32).hash(state);
     }
 }
 
 impl PartialEq<Self> for Tile {
     fn eq(&self, other: &Self) -> bool {
-        self.coords == other.coords
+        self.pos == other.pos
     }
 }
 
 impl std::cmp::Eq for Tile {}
 
+enum ExitPosition {
+    Left,
+    Top,
+    Right,
+    Bottom,
+}
+
+impl rand::distributions::Distribution<ExitPosition> for rand::distributions::Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> ExitPosition {
+        match rng.gen_range(0..4) {
+            0 => ExitPosition::Left,
+            1 => ExitPosition::Top,
+            2 => ExitPosition::Right,
+            3 => ExitPosition::Bottom,
+            _ => ExitPosition::Left, // this should not happen
+        }
+    }
+}
+
 #[test]
 fn test_hash_eq() {
     let t1 = Tile {
-        coords: Vec2::new(3., 3.),
+        pos: IVec2::new(3., 3.),
         kind: TileType::Floor,
     };
 
     let t2 = Tile {
-        coords: Vec2::new(3., 3.),
+        pos: IVec2::new(3., 3.),
         kind: TileType::Wall,
     };
 

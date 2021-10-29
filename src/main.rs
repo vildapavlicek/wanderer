@@ -11,8 +11,9 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 
 fn main() {
+    trace!("app started");
+
     App::build()
-        // .init_resource::<UiState>()
         .insert_resource(WindowDescriptor {
             title: "Lonely Wanderer".to_string(),
             width: 1024.0,
