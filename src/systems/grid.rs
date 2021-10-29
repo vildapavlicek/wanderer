@@ -3,6 +3,7 @@ use crate::resources::Materials;
 // use crate::systems::enemy::MoveDirection;
 use bevy::prelude::*;
 use bevy::utils::HashSet;
+use num_integer::Integer;
 use rand::Rng;
 
 struct Map {
@@ -21,19 +22,29 @@ impl Map {
 
 pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     let mut map = Map::new();
-    let mut room = Room::new(IVec2::new(0, 0), 3, 11);
-    room.create_rect_room(&mut map);
-    room.create_entry_top(&mut map);
-    room.create_entry_left(&mut map);
-    room.create_entry_bottom(&mut map);
-    room.create_entry_right(&mut map);
+    // let mut room = Room::new(IVec2::new(0, 0), 3, 11);
+    // room.create_rect_room(&mut map);
+    // room.create_entry_top(&mut map);
+    // room.create_entry_left(&mut map);
+    // room.create_entry_bottom(&mut map);
+    // room.create_entry_right(&mut map);
 
-    let mut room2 = Room::new(IVec2::new(0, 16), 5, 5);
-    room2.create_rect_room(&mut map);
-    room2.create_entry_top(&mut map);
-    room2.create_entry_left(&mut map);
-    room2.create_entry_bottom(&mut map);
-    room2.create_entry_right(&mut map);
+    let mut rng = rand::thread_rng();
+    let n_rooms = rng.gen_range(10..=30);
+
+    for _ in 0..=n_rooms {
+        let x = rng.gen_range(-25..=25);
+        let y = rng.gen_range(-25..=25);
+        let width = rng.gen_range(1..=10);
+        let height = rng.gen_range(1..=10);
+
+        map.rooms.push(Room::new(IVec2::new(x, y), height, width));
+    }
+
+    for room in map.rooms.iter_mut() {
+        room.create_rect_room(&mut map.tiles);
+        room.create_entries(&mut map.tiles);
+    }
 
     for Tile { coords, kind } in map.tiles {
         match kind {
@@ -75,7 +86,7 @@ impl Room {
         }
     }
 
-    fn create_rect_room(&self, map: &mut Map) {
+    fn create_rect_room(&self, tiles: &mut HashSet<Tile>) {
         println!("trying to spawn room");
         let start_x = (self.center.x - (self.width as i32 / 2) - 1);
         let start_y = (self.center.y - (self.height as i32 / 2) - 1);
@@ -84,7 +95,7 @@ impl Room {
 
         println!("spawning bottom walls");
         for i in 0..=width + 1 {
-            map.tiles.insert(Tile {
+            tiles.replace(Tile {
                 coords: Vec2::new(to_coords(start_x + i) as f32, to_coords(start_y) as f32),
                 kind: TileType::Wall,
             });
@@ -92,61 +103,72 @@ impl Room {
 
         println!("spawning rest of room");
         for i in 1..=height {
-            map.tiles.insert(Tile::wall(start_x, start_y + i));
+            tiles.replace(Tile::wall(start_x, start_y + i));
             // now spawn our floors
             for j in 1..=width {
-                map.tiles.insert(Tile::floor(start_x + j, start_y + i));
+                tiles.replace(Tile::floor(start_x + j, start_y + i));
             }
 
             // spawn our right wall
-            map.tiles
-                .insert(Tile::wall(start_x + width + 1, start_y + i));
+            tiles.replace(Tile::wall(start_x + width + 1, start_y + i));
         }
 
         for i in 0..=width + 1 {
-            map.tiles
-                .insert(Tile::wall(start_x + i, start_y + height + 1));
+            tiles.replace(Tile::wall(start_x + i, start_y + height + 1));
         }
 
         println!("room generation finished")
     }
 
-    fn create_entry_top(&mut self, map: &mut Map) {
+    fn create_entry_top(&mut self, tiles: &mut HashSet<Tile>) {
+        let offset = i32::from(self.height.is_odd());
         let pos = IVec2::new(
             self.center.x,
-            (self.center.y + (self.height as i32 / 2) + 1),
+            (self.center.y + (self.height as i32 / 2) + offset),
         );
         let tile = Tile::floor(pos.x, pos.y);
-        let x = map.tiles.replace(tile);
+        let x = tiles.replace(tile);
         self.entry_points.push(pos);
         println!("replaced: {:?}, pos: {:?}", x, pos);
     }
 
-    fn create_entry_bottom(&mut self, map: &mut Map) {
+    fn create_entry_bottom(&mut self, tiles: &mut HashSet<Tile>) {
         let pos = IVec2::new(
             self.center.x,
             (self.center.y - (self.height as i32 / 2) - 1),
         );
         let tile = Tile::floor(pos.x, pos.y);
-        let x = map.tiles.replace(tile);
+        let x = tiles.replace(tile);
         self.entry_points.push(pos);
         println!("replaced: {:?}, pos: {:?}", x, pos);
     }
 
-    fn create_entry_left(&mut self, map: &mut Map) {
+    fn create_entry_left(&mut self, tiles: &mut HashSet<Tile>) {
         let pos = IVec2::new(self.center.x - (self.width as i32 / 2) - 1, self.center.y);
         let tile = Tile::floor(pos.x, pos.y);
-        let x = map.tiles.replace(tile);
+        let x = tiles.replace(tile);
         self.entry_points.push(pos);
         println!("replaced: {:?}, pos: {:?}", x, pos);
     }
 
-    fn create_entry_right(&mut self, map: &mut Map) {
-        let pos = IVec2::new(self.center.x + (self.width as i32 / 2) + 1, self.center.y);
+    fn create_entry_right(&mut self, tiles: &mut HashSet<Tile>) {
+        let offset = i32::from(self.width.is_odd());
+        let pos = IVec2::new(
+            self.center.x + (self.width as i32 / 2) + offset,
+            self.center.y,
+        );
         let tile = Tile::floor(pos.x, pos.y);
-        let x = map.tiles.replace(tile);
+        let x = tiles.replace(tile);
         self.entry_points.push(pos);
         println!("replaced: {:?}, pos: {:?}", x, pos);
+    }
+
+    fn create_entries(&mut self, tiles: &mut HashSet<Tile>) {
+        self.create_rect_room(tiles);
+        self.create_entry_top(tiles);
+        self.create_entry_left(tiles);
+        self.create_entry_bottom(tiles);
+        self.create_entry_right(tiles);
     }
 }
 

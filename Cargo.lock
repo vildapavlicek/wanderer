@@ -3311,6 +3311,7 @@ dependencies = [
  "bevy",
  "bevy_egui",
  "chrono",
+ "num-integer",
  "rand",
 ]
 
