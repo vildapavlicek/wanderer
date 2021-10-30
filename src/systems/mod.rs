@@ -1,8 +1,6 @@
 pub mod enemy;
-pub mod grid;
 pub mod player;
 pub mod ranged;
-mod shared;
 pub mod ui;
 
 use crate::components::player::{Player, PlayerCamera};

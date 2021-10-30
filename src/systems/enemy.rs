@@ -93,12 +93,6 @@ pub fn enemy_move(
                 let (mut position, mut move_direction) = q
                     .get_mut(entity)
                     .expect("requested entity for movement not found");
-
-                /* if super::shared::is_out_of_bounds(x, y, map.x_size, map.y_size) {
-                    *move_direction = move_direction.opposite();
-                } else {
-                    position.translation.x = x;
-                } */
             }
             NPCActionType::Attack(_target, name) => {
                 let (_entity, mut hp) = targets.single_mut().expect("no player entity");
