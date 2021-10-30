@@ -24,38 +24,48 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     let mut map = Map::new();
     let mut room = Room::new(IVec2::new(0, 0), 5, 5);
     room.create_rect_room(&mut map.tiles);
-    // room.create_entry_top(&mut map.tiles);
+    room.create_entry_top(&mut map.tiles);
     // room.create_entry_left(&mut map.tiles);
-    room.create_entry_bottom(&mut map.tiles);
+    //     room.create_entry_bottom(&mut map.tiles);
     // room.create_entry_right(&mut map.tiles);
     map.rooms.push(room);
 
-    let mut room = Room::new(IVec2::new(0, 10), 5, 5);
-    room.create_rect_room(&mut map.tiles);
-    room.create_entry_top(&mut map.tiles);
+    // let mut room = Room::new(IVec2::new(0, -10), 5, 5);
+    // room.create_rect_room(&mut map.tiles);
+    // room.create_entry_top(&mut map.tiles);
     // room.create_entry_left(&mut map.tiles);
     // room.create_entry_bottom(&mut map.tiles);
     // room.create_entry_right(&mut map.tiles);
-    map.rooms.push(room);
+    // map.rooms.push(room);
+
+    // let mut room = Room::new(IVec2::new(0, 10), 5, 5);
+    // room.create_rect_room(&mut map.tiles);
+    // room.create_entry_top(&mut map.tiles);
+    // room.create_entry_left(&mut map.tiles);
+    // room.create_entry_bottom(&mut map.tiles);
+    // room.create_entry_right(&mut map.tiles);
+    // map.rooms.push(room);
 
     // ---------------------- RNG rooms
-    // let mut rng = rand::thread_rng();
-    // let n_rooms = rng.gen_range(10..=30);
-    //
-    // for _ in 0..=n_rooms {
-    //     let x = rng.gen_range(-25..=25);
-    //     let y = rng.gen_range(-25..=25);
-    //     let width = rng.gen_range(3..=10);
-    //     let height = rng.gen_range(3..=10);
-    //
-    //     map.rooms.push(Room::new(IVec2::new(x, y), height, width));
-    // }
-    //
-    // for room in map.rooms.iter_mut() {
-    //     room.create_rect_room(&mut map.tiles);
-    //     let exit_position = rng.gen();
-    //     room.create_exit_at(&mut map.tiles, exit_position);
-    // }
+    let mut rng = rand::thread_rng();
+    let n_rooms = rng.gen_range(10..=30);
+
+    for _ in 0..=5
+    /* n_rooms */
+    {
+        let x = rng.gen_range(-25..=25);
+        let y = rng.gen_range(-25..=25);
+        let width = rng.gen_range(3..=10);
+        let height = rng.gen_range(3..=10);
+
+        map.rooms.push(Room::new(IVec2::new(x, y), height, width));
+    }
+
+    for room in map.rooms.iter_mut() {
+        room.create_rect_room(&mut map.tiles);
+        let exit_position = rng.gen();
+        room.create_exit_at(&mut map.tiles, exit_position);
+    }
 
     connect_rooms(&mut map);
 
@@ -109,20 +119,23 @@ fn connect_rooms(map: &mut Map) {
                 .expect("entry point not found for NEXT room");
 
             println!(
-                "got room {:?} and next room with start {:?} and finish {:?}",
+                "got room {:?} and next room. start entry point: '{:?}' and finish entry_point '{:?}'",
                 room, start, finish
             );
 
-            let (mut offset_x, mut offset_y) = (0, 0);
+            let (mut offset_x, mut offset_y) = (start.x, start.y);
             println!(
                 "generating path with offset_x {} and offset_y {}",
                 offset_x, offset_y
             );
             while offset_x != finish.x {
-                println!("offset_x {}", offset_x);
-                let floor = Tile::floor(start.x + offset_x, start.y);
-                let top_wall = Tile::wall(start.x + offset_x, start.y + 1);
-                let bottom_wall = Tile::wall(start.x + offset_x, start.y - 1);
+                println!(
+                    "start.x {}, offset_x {}, finish.x {}",
+                    start.x, offset_x, finish.x
+                );
+                let floor = Tile::floor(offset_x, start.y);
+                let top_wall = Tile::wall(offset_x, start.y + 1);
+                let bottom_wall = Tile::wall(offset_x, start.y - 1);
 
                 tiles.replace(floor);
                 tiles.insert(top_wall);
@@ -136,10 +149,17 @@ fn connect_rooms(map: &mut Map) {
             }
 
             while offset_y != finish.y {
-                println!("offset_y {}", offset_y);
-                let floor = Tile::floor(offset_x, start.y + offset_y);
+                println!(
+                    "start.y {}, offset_y {}, finish.y {}",
+                    start.y, offset_y, finish.y
+                );
+                /* let floor = Tile::floor(offset_x, start.y + offset_y);
                 let left_wall = Tile::wall(offset_x - 1, start.y + offset_y);
-                let right_wall = Tile::wall(offset_x + 1, start.y + offset_y);
+                let right_wall = Tile::wall(offset_x + 1, start.y + offset_y); */
+
+                let floor = Tile::floor(offset_x, offset_y);
+                let left_wall = Tile::wall(offset_x - 1, offset_y);
+                let right_wall = Tile::wall(offset_x + 1, offset_y);
 
                 tiles.replace(floor);
                 tiles.insert(left_wall);
@@ -323,12 +343,12 @@ impl rand::distributions::Distribution<ExitPosition> for rand::distributions::St
 #[test]
 fn test_hash_eq() {
     let t1 = Tile {
-        pos: IVec2::new(3., 3.),
+        pos: IVec2::new(3, 3),
         kind: TileType::Floor,
     };
 
     let t2 = Tile {
-        pos: IVec2::new(3., 3.),
+        pos: IVec2::new(3, 3),
         kind: TileType::Wall,
     };
 
