@@ -1,3 +1,4 @@
 /target
 .idea
 old_builds
+.vscode/
