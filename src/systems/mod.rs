@@ -39,7 +39,7 @@ pub fn setup(
     let texture_atlas = TextureAtlas::from_grid(flamey_handle, Vec2::new(32.0, 32.0), 1, 12);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
-    // todo: this is only place holder, I think we might need to load it somewhere else
+    // todo: this is only place holder
     let face_handle = asset_server.load("placeholders/face.png");
     egui_context.set_egui_texture(1, face_handle);
 

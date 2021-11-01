@@ -1,8 +1,7 @@
-// #![windows_subsystem = "windows"] // disables console window
+#![windows_subsystem = "windows"] // disables console window, disable in VSCode, otherwise there is no output in console
 #![deny(clippy::float_cmp)]
 #![allow(unused)]
 mod components;
-mod events;
 mod map;
 mod resources;
 mod systems;

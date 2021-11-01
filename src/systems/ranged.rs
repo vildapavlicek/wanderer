@@ -10,7 +10,6 @@ impl Plugin for RangedPlugin {
             SystemSet::on_update(GameState::RangedTargeting)
                 .with_system(targeting.system().chain(ranged_attack.system())),
         );
-        // .add_event::<RangedAttackEvent>();
     }
 }
 

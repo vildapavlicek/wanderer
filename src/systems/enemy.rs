@@ -1,6 +1,5 @@
 use crate::components::{player::Player, Blocking, Enemy, Health};
 use crate::resources::GameState;
-// use crate::systems::grid::Map;
 use bevy::prelude::*;
 
 pub enum MoveDirection {
@@ -83,7 +82,6 @@ pub fn enemy_move(
     In(to_move): In<Vec<NPCActionType>>,
     mut q: Query<(&mut Transform, &mut MoveDirection)>,
     mut targets: Query<(Entity, &mut Health), With<Player>>,
-    //map: Res<Map>,
     mut game_state: ResMut<State<GameState>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
