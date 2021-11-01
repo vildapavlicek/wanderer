@@ -1,6 +1,9 @@
-#![windows_subsystem = "windows"] // disables console window
+// #![windows_subsystem = "windows"] // disables console window
+#![deny(clippy::float_cmp)]
+#![allow(unused)]
 mod components;
 mod events;
+mod map;
 mod resources;
 mod systems;
 
@@ -10,8 +13,10 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 
 fn main() {
+    trace!("app started");
+    println!("hello");
+
     App::build()
-        // .init_resource::<UiState>()
         .insert_resource(WindowDescriptor {
             title: "Lonely Wanderer".to_string(),
             width: 1024.0,
@@ -29,7 +34,7 @@ fn main() {
         .add_startup_system(systems::setup.system())
         .add_startup_stage(
             "generate_map",
-            SystemStage::single(systems::grid::generate_map.system()),
+            SystemStage::single(map::generate_map.system()), // systems::grid::generate_map.system()
         )
         .add_system_set(
             SystemSet::on_update(GameState::EnemyTurn).with_system(

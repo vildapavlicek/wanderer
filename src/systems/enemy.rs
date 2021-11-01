@@ -1,6 +1,6 @@
 use crate::components::{player::Player, Blocking, Enemy, Health};
 use crate::resources::GameState;
-use crate::systems::grid::Map;
+// use crate::systems::grid::Map;
 use bevy::prelude::*;
 
 pub enum MoveDirection {
@@ -58,13 +58,10 @@ pub fn enemy_turn(
             MoveDirection::Right => enemy_pos.translation.x + super::MOVE_SIZE,
         };
 
-        let is_blocked = blockers
-            .iter()
-            .find(|(blocker_pos, _)| {
-                blocker_pos.translation.x == future_x
-                    && blocker_pos.translation.y == enemy_pos.translation.y
-            })
-            .is_some();
+        let is_blocked = blockers.iter().any(|(blocker_pos, _)| {
+            blocker_pos.translation.x == future_x
+                && blocker_pos.translation.y == enemy_pos.translation.y
+        });
 
         if !is_blocked {
             to_move.push(NPCActionType::Move {
@@ -86,7 +83,7 @@ pub fn enemy_move(
     In(to_move): In<Vec<NPCActionType>>,
     mut q: Query<(&mut Transform, &mut MoveDirection)>,
     mut targets: Query<(Entity, &mut Health), With<Player>>,
-    map: Res<Map>,
+    //map: Res<Map>,
     mut game_state: ResMut<State<GameState>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
@@ -96,12 +93,6 @@ pub fn enemy_move(
                 let (mut position, mut move_direction) = q
                     .get_mut(entity)
                     .expect("requested entity for movement not found");
-
-                if super::shared::is_out_of_bounds(x, y, map.x_size, map.y_size) {
-                    *move_direction = move_direction.opposite();
-                } else {
-                    position.translation.x = x;
-                }
             }
             NPCActionType::Attack(_target, name) => {
                 let (_entity, mut hp) = targets.single_mut().expect("no player entity");

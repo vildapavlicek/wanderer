@@ -5,6 +5,7 @@ use bevy::prelude::Bundle;
 use std::fmt::Formatter;
 use std::ops::Add;
 
+/// This represents name of the thing, NPC or anything that needs to be named
 #[derive(Debug)]
 pub struct Name(pub String);
 impl std::fmt::Display for Name {
@@ -29,6 +30,8 @@ impl std::default::Default for State {
     }
 }
 
+/// This is component that marks that it will block your path
+/// To make it easier it has type of blocking. If you are blocked by enemy (you'd bump into them) it should be instead considered as attack
 #[derive(Debug)]
 pub struct Blocking {
     pub blocking_type: BlockingType,
@@ -60,10 +63,7 @@ impl Blocking {
     }
 
     pub fn is_attackable(&self) -> bool {
-        match self.blocking_type {
-            BlockingType::Enemy => true,
-            _ => false,
-        }
+        matches!(self.blocking_type, BlockingType::Enemy)
     }
 }
 
@@ -75,6 +75,7 @@ pub enum BlockingType {
     Player,
 }
 
+/// Component that stores max possible health as well as tracks the current health
 #[derive(Debug)]
 pub struct Health {
     pub current: i32,
@@ -93,6 +94,7 @@ impl Health {
     }
 }
 
+/// Compotent that should be attached to something that is regarded to be enemy to player. Should go in hand with Blocking::enemy()
 pub struct Enemy;
 
 #[derive(Debug)]
@@ -118,6 +120,7 @@ impl std::fmt::Display for Race {
     }
 }
 
+/// Rarity types of items that can be found. Each rarity level aslo shoud add some bonuses
 #[derive(Debug)]
 pub enum Rarity {
     Damaged,
