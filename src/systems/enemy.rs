@@ -34,10 +34,10 @@ pub enum NPCActionType {
     RevertDirection(Entity),
 }
 
-use crate::components::Name;
+use crate::components::ItemName;
 pub fn enemy_turn(
     player: Query<(Entity, &Transform), With<Player>>,
-    enemies: Query<(Entity, &Transform, &MoveDirection, &Name), With<Enemy>>,
+    enemies: Query<(Entity, &Transform, &MoveDirection, &ItemName), With<Enemy>>,
     blockers: Query<(&Transform, &Blocking)>,
 ) -> Vec<NPCActionType> {
     let mut to_move: Vec<NPCActionType> = vec![];

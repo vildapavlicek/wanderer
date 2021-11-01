@@ -1,18 +1,19 @@
 use bevy::prelude::Bundle;
 use rand::Rng;
 
-#[derive(Bundle)]
-pub struct Npc {
-    name: super::Name,
-    race: super::Race,
-    level: super::Level,
-    blocking: super::Blocking,
-}
+// Either make this more sensible, like better naming or remove
+// #[derive(Bundle)]
+// pub struct Npc {
+//     name: super::Name,
+//     race: super::Race,
+//     level: super::Level,
+//     blocking: super::Blocking,
+// }
 
 #[derive(Bundle)]
-pub struct MeeleeEnemy {
+pub struct MeleeEnemy {
     health: super::Health,
-    name: super::Name,
+    name: super::ItemName,
     race: super::Race,
     // probably won't need level, or just internally as it should be player level + monster strength
     level: super::Level,
@@ -24,7 +25,7 @@ pub struct MeeleeEnemy {
     stats: super::Stats,
 }
 
-impl MeeleeEnemy {
+impl MeleeEnemy {
     pub fn new(
         name: String,
         max_health: usize,
@@ -32,8 +33,8 @@ impl MeeleeEnemy {
         level: usize,
         stats: super::Stats,
     ) -> Self {
-        MeeleeEnemy {
-            name: super::Name(name),
+        MeleeEnemy {
+            name: super::ItemName(name),
             health: super::Health::new(max_health as i32),
             race,
             level: super::Level(level as i32),
@@ -45,6 +46,7 @@ impl MeeleeEnemy {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum MonsterStrength {
     Weak,
     Normal,
@@ -56,7 +58,7 @@ pub enum MonsterStrength {
 }
 
 impl MonsterStrength {
-    pub fn get_monster_strength(n: f32) -> Self {
+    pub fn new(n: f32) -> Self {
         assert!(n <= 1.);
 
         match n {
@@ -83,6 +85,6 @@ impl MonsterStrength {
 
     pub fn random() -> Self {
         let rng = rand::thread_rng().gen_range(0.0..1.0) as f32;
-        Self::get_monster_strength(rng)
+        Self::new(rng)
     }
 }

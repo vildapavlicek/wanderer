@@ -128,7 +128,7 @@ pub fn player_move_or_attack(
         Query<&mut Transform, With<Player>>,
         Query<&mut Transform, With<PlayerCamera>>,
     )>,
-    mut enemies: Query<(Entity, &mut Health, &crate::components::Name), With<Enemy>>,
+    mut enemies: Query<(Entity, &mut Health, &crate::components::ItemName), With<Enemy>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
     match event {

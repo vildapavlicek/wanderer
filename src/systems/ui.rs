@@ -8,7 +8,7 @@ use chrono::Local;
 use std::borrow::Cow;
 
 use crate::components::{
-    player::Player, Agility, Endurance, Health, Intelligence, Level, Name, Race, Strength,
+    player::Player, Agility, Endurance, Health, Intelligence, ItemName, Level, Race, Strength,
 };
 
 #[derive(Debug)]
@@ -153,7 +153,7 @@ pub fn ui(
             &Intelligence,
             &Strength,
             &Level,
-            &Name,
+            &ItemName,
             &Race,
         ),
         With<Player>,
