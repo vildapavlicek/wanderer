@@ -141,15 +141,6 @@ impl EventTarget {
     }
 }
 
-// impl EventTarget {
-//     pub fn inner(&self) -> String {
-//         match self {
-//             Self::NPC(v) => v.to_owned(),
-//             Self::Player => "You".to_owned(),
-//         }
-//     }
-// }
-
 pub fn ui(
     egui_ctx: Res<EguiContext>,
     logs: Res<LogMessages>,
@@ -176,15 +167,8 @@ pub fn ui(
         .expect("failed to get player related data for UI");
 
     egui::TopBottomPanel::bottom("text panel")
-        // .default_height(window.height() * 0.33)
         .resizable(false)
-        // .max_height(window.height() * 0.33)
         .show(egui_ctx.ctx(), |ui| {
-            // ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-            //     ui.heading("LogPanel")
-            // });
-            // egui::Label::new("Log panel").heading();
-
             ui.allocate_exact_size(egui::Vec2::new(250., 100.), egui::Sense::hover());
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
@@ -201,7 +185,7 @@ pub fn ui(
         });
 
     egui::SidePanel::left("side_panel")
-        .default_width(window.width() * 0.25) //window.width() * 0.33
+        .default_width(window.width() * 0.25)
         .resizable(false)
         .show(egui_ctx.ctx(), |ui| {
             ui.heading("Player info");

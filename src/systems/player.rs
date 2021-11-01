@@ -97,7 +97,6 @@ pub fn handle_key_input(
                 (blocker_pos.translation.x == x) && (blocker_pos.translation.y == y)
             }) {
                 Some((entity, _, blocking)) if blocking.is_attackable() => {
-                    // player_action_writer.send(PlayerActionEvent::Attack(entity))
                     Some(PlayerActionEvent::Attack(entity))
                 }
                 Some(_) => None,
@@ -130,21 +129,15 @@ pub fn player_move_or_attack(
         Query<&mut Transform, With<PlayerCamera>>,
     )>,
     mut enemies: Query<(Entity, &mut Health, &crate::components::Name), With<Enemy>>,
-    // map: Res<crate::systems::grid::Map>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
     match event {
         Some(PlayerActionEvent::Move(x, y)) => {
-            /* if super::shared::is_out_of_bounds(x, y, map.x_size, map.y_size) {
-                return;
-            } */
-
             let mut player_pos = player_camera_pos
                 .q0_mut()
                 .single_mut()
                 .expect("no player found");
 
-            // player_pos.update(*x, *y);
             player_pos.translation = Vec3::new(x, y, player_pos.translation.z);
 
             let mut camera_pos = player_camera_pos
