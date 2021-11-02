@@ -1,4 +1,4 @@
-use crate::components::Blocking;
+use crate::components::{Blocking, ItemName};
 use crate::resources::Materials;
 use bevy::prelude::*;
 use bevy::utils::HashSet;
@@ -14,16 +14,18 @@ const PLAYER_LAYER: f32 = 3.;
 
 const MOVE_SIZE: f32 = 32.;
 
+type TileSet = HashSet<Tile>;
+
 struct Map {
     rooms: Vec<Room>,
-    tiles: HashSet<Tile>,
+    tiles: TileSet,
 }
 
 impl Map {
     fn new() -> Self {
         Map {
             rooms: vec![],
-            tiles: HashSet::default(),
+            tiles: TileSet::default(),
         }
     }
 }
@@ -53,15 +55,19 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     }
 
     connect_rooms(&mut map);
+
+    let mut monster_spawner = monster_spawner::Spawner::new();
+    monster_spawner.generate_monsters(&map.tiles);
+
     plug(&mut map);
 
     // spawn map
     for Tile { pos, kind } in map.tiles {
         match kind {
             TileType::Wall => {
-                cmd.spawn_bundle(SpriteBundle {
-                    material: materials.obstacle_material.clone(),
-                    sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                let r = rng.gen_range(0. ..=0.99);
+                cmd.spawn_bundle(SpriteSheetBundle {
+                    texture_atlas: materials.cave_wall_sprite_sheet.clone(),
                     transform: Transform::from_xyz(
                         to_coords(pos.x),
                         to_coords(pos.y),
@@ -69,7 +75,20 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                     ),
                     ..Default::default()
                 })
-                .insert(Blocking::obstacle());
+                .insert(Blocking::wall())
+                .insert(Timer::from_seconds(r, true));
+
+                // cmd.spawn_bundle(SpriteBundle {
+                //     material: materials.cave_wall.clone(),
+                //     sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                //     transform: Transform::from_xyz(
+                //         to_coords(pos.x),
+                //         to_coords(pos.y),
+                //         MONSTER_LAYER,
+                //     ),
+                //     ..Default::default()
+                // })
+                // .insert(Blocking::wall());
             }
             TileType::Floor => {
                 cmd.spawn_bundle(SpriteBundle {
@@ -81,6 +100,8 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
             }
         }
     }
+
+    monster_spawner.spawn_monsters(&mut cmd, materials);
 }
 
 /// Iterates over all rooms and connect one to next. This way we can be sure all rooms are connected
@@ -129,7 +150,7 @@ fn connect_rooms(map: &mut Map) {
 
 /// Iterates over our floor tiles and if is has no neigbohouring floor tile inserts wall tile
 fn plug(map: &mut Map) {
-    let mut to_insert = HashSet::default();
+    let mut to_insert = TileSet::default();
     for tile in map.tiles.iter() {
         // due to borrow checker we cannot iterate and also insert
         // also this is called when only floor tiles are generated, so we do not need to filter anything
@@ -177,7 +198,7 @@ impl Room {
     }
 
     /// Creates a room with rectangular shape
-    fn create_rect_room(&self, tiles: &mut HashSet<Tile>) {
+    fn create_rect_room(&self, tiles: &mut TileSet) {
         let start_x = self.center.x - (self.width as i32 / 2) - 1;
         let start_y = self.center.y - (self.height as i32 / 2) - 1;
         let width = self.width as i32;
@@ -258,7 +279,248 @@ fn test_hash_eq() {
         kind: TileType::Wall,
     };
 
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    let t3 = Tile {
+        pos: IVec2::new(4, 3),
+        kind: TileType::Floor,
+    };
 
-    assert_eq!(t1.hash(&mut hasher), t2.hash(&mut hasher))
+    let t4 = Tile {
+        pos: IVec2::new(4, 3),
+        kind: TileType::Wall,
+    };
+
+    let mut hasher_1 = std::collections::hash_map::DefaultHasher::new();
+    let mut hasher_2 = std::collections::hash_map::DefaultHasher::new();
+    let mut hasher_3 = std::collections::hash_map::DefaultHasher::new();
+    let mut hasher_4 = std::collections::hash_map::DefaultHasher::new();
+
+    let t1_hash = {
+        t1.hash(&mut hasher_1);
+        hasher_1.finish()
+    };
+
+    let t2_hash = {
+        t2.hash(&mut hasher_2);
+        hasher_2.finish()
+    };
+
+    let t3_hash = {
+        t3.hash(&mut hasher_3);
+        hasher_3.finish()
+    };
+
+    let t4_hash = {
+        t4.hash(&mut hasher_4);
+        hasher_4.finish()
+    };
+
+    assert_eq!(t1_hash, t2_hash, "first test failed");
+    assert_ne!(t1_hash, t3_hash, "secont test failed");
+    assert_eq!(t3_hash, t4_hash, "third test failed")
+}
+
+mod monster_spawner {
+    use super::*;
+    use crate::components::npc::MonsterStrength;
+
+    type MonsterSet = HashSet<Monster>;
+
+    const MONSTER_WEIGHTS: [(MonsterStrength, u32); 7] = [
+        (MonsterStrength::Weak, 1),
+        (MonsterStrength::Normal, 1),
+        (MonsterStrength::Strong, 1),
+        (MonsterStrength::Elite, 1),
+        (MonsterStrength::Veteran, 1),
+        (MonsterStrength::Leader, 1),
+        (MonsterStrength::Boss, 1),
+    ];
+
+    fn monster_weight(monster_strength: MonsterStrength) -> i32 {
+        match monster_strength {
+            MonsterStrength::Weak => 2,
+            MonsterStrength::Normal => 3,
+            MonsterStrength::Strong => 4,
+            MonsterStrength::Elite => 5,
+            MonsterStrength::Veteran => 6,
+            MonsterStrength::Leader => 7,
+            MonsterStrength::Boss => 10,
+        }
+    }
+
+    pub(super) struct Spawner {
+        monster_count: i32,
+        weak: i32,
+        normal: i32,
+        strong: i32,
+        elite: i32,
+        veteran: i32,
+        boss: i32,
+        monster_set: MonsterSet,
+    }
+
+    impl Spawner {
+        pub(super) fn new() -> Self {
+            Spawner {
+                monster_count: 0,
+                weak: 0,
+                normal: 0,
+                strong: 0,
+                elite: 0,
+                veteran: 0,
+                boss: 0,
+                monster_set: Default::default(),
+            }
+        }
+
+        pub(super) fn generate_monsters(&mut self, tiles: &TileSet) {
+            trace!("generating monsters");
+            let tiles = tiles.iter().collect::<Vec<&'_ Tile>>();
+            let max_index = tiles.len();
+            // total_monster_weight should be used to count how many monsters we want to spawn
+            let mut total_monster_weight = ((max_index as f32) * 0.5) as i32; // let's make sure that at least 25% of the map is walkable
+
+            debug!(%max_index, %total_monster_weight, "constraints");
+
+            let mut rng = rand::thread_rng();
+
+            while total_monster_weight >= 0 {
+                let index = rng.gen_range(0..max_index);
+
+                if let Some(tile) = tiles.get(index) {
+                    trace!(%index, ?tile, "got tile");
+                    let monster = Monster::new(tile.pos, self.decide_monster_strength());
+                    let weight = monster.weight() * 2;
+                    if self.monster_set.insert(monster) {
+                        total_monster_weight -= weight;
+                        self.monster_count += 1;
+                        debug!(%total_monster_weight, ?monster, "inserted monster");
+                    }
+                }
+            }
+        }
+
+        pub(super) fn spawn_monsters(&self, cmd: &mut Commands, materials: Res<Materials>) {
+            for monster in &self.monster_set {
+                cmd.spawn_bundle(SpriteSheetBundle {
+                    texture_atlas: materials.flamey_sprite_sheet.clone(),
+                    transform: Transform::from_xyz(
+                        to_coords(monster.pos.x),
+                        to_coords(monster.pos.y),
+                        MONSTER_LAYER,
+                    ),
+                    ..Default::default()
+                })
+                .insert(Timer::from_seconds(0.1, true))
+                .insert_bundle(crate::components::npc::MeleeEnemy::new(
+                    "Flamey".into(),
+                    5,
+                    crate::components::Race::Elemental,
+                    1,
+                    crate::components::Stats::new(1, 1, 1, 1),
+                ));
+            }
+        }
+
+        fn decide_monster_strength(&self) -> MonsterStrength {
+            if self.monster_count == 0 {
+                return MonsterStrength::Weak;
+            }
+            let count = self.monster_count;
+            match count {
+                0 => MonsterStrength::Weak,
+                _ if count % 33 == 0 => MonsterStrength::Veteran,
+                _ if count % 13 == 0 => MonsterStrength::Elite,
+                _ if count % 7 == 0 => MonsterStrength::Strong,
+                _ if count % 3 == 0 => MonsterStrength::Normal,
+                _ => MonsterStrength::Weak,
+            }
+        }
+
+        // fn new_monster(&mut self, pos: IVec2) {
+        //     let strength = self.decide_monster_strength();
+        //     self.monster_set.insert(Monster::new(pos, strength))
+        // }
+    }
+
+    #[derive(Debug, Copy, Clone)]
+    struct Monster {
+        strength: MonsterStrength,
+        pos: IVec2,
+    }
+
+    impl Monster {
+        fn new(pos: IVec2, strength: MonsterStrength) -> Self {
+            Monster { strength, pos }
+        }
+
+        fn weight(&self) -> i32 {
+            monster_weight(self.strength)
+        }
+    }
+
+    impl Eq for Monster {}
+    impl PartialEq<Self> for Monster {
+        fn eq(&self, other: &Self) -> bool {
+            self.pos == other.pos
+        }
+    }
+
+    impl Hash for Monster {
+        fn hash<H: Hasher>(&self, state: &mut H) {
+            self.pos.y.hash(state);
+            self.pos.x.hash(state);
+        }
+    }
+
+    #[test]
+    fn test_hash_eq() {
+        let m1 = Monster {
+            pos: IVec2::new(3, 3),
+            strength: MonsterStrength::Weak,
+        };
+
+        let m2 = Monster {
+            pos: IVec2::new(3, 3),
+            strength: MonsterStrength::Weak,
+        };
+
+        let m3 = Monster {
+            pos: IVec2::new(3, 4),
+            strength: MonsterStrength::Weak,
+        };
+
+        let m4 = Monster {
+            pos: IVec2::new(3, 4),
+            strength: MonsterStrength::Boss,
+        };
+
+        let mut hasher_1 = std::collections::hash_map::DefaultHasher::new();
+        let mut hasher_2 = std::collections::hash_map::DefaultHasher::new();
+        let mut hasher_3 = std::collections::hash_map::DefaultHasher::new();
+        let mut hasher_4 = std::collections::hash_map::DefaultHasher::new();
+
+        let m1_hash = {
+            m1.hash(&mut hasher_1);
+            hasher_1.finish()
+        };
+
+        let m2_hash = {
+            m2.hash(&mut hasher_2);
+            hasher_2.finish()
+        };
+
+        let m3_hash = {
+            m3.hash(&mut hasher_3);
+            hasher_3.finish()
+        };
+
+        let m4_hash = {
+            m4.hash(&mut hasher_4);
+            hasher_4.finish()
+        };
+
+        assert_eq!(m1_hash, m2_hash, "first test failed");
+        assert_ne!(m1_hash, m3_hash, "second test failed");
+        assert_eq!(m3_hash, m4_hash, "third test failed")
+    }
 }

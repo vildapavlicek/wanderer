@@ -7,8 +7,8 @@ use std::ops::Add;
 
 /// This represents name of the thing, NPC or anything that needs to be named
 #[derive(Debug)]
-pub struct Name(pub String);
-impl std::fmt::Display for Name {
+pub struct ItemName(pub String);
+impl std::fmt::Display for ItemName {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
