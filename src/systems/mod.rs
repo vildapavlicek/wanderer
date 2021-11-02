@@ -34,15 +34,17 @@ pub fn setup(
     let player_texture = asset_server.get_handle("images/player.png");
     let player_texture_24x24 = asset_server.get_handle("images/player24x24.png");
     let enemy_texture = asset_server.get_handle("images/enemy.png");
-    let floor_texture = asset_server.get_handle("images/cave_floor.png");
-    let cave_wall_texture = asset_server.get_handle("images/cave_wall3.png");
+    let floor_texture = asset_server.get_handle("images/cave_floor_dark.png");
+    let cave_wall_texture = asset_server.get_handle("images/cave_wall4.png");
+    let cave_spider = asset_server.get_handle("images/cave_spider.png");
 
     asset_server.load_folder("sprites").unwrap();
     let flamey_handle = asset_server.get_handle("sprites/flamey.png");
     let texture_atlas = TextureAtlas::from_grid(flamey_handle, Vec2::new(32.0, 32.0), 1, 12);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
-    let cave_wall_handle = asset_server.get_handle("sprites/cave_wall_sheet_r3c6.png");
+    let cave_wall_handle = asset_server.get_handle("sprites/cave_wall3_darker.png");
+    // let cave_wall_handle = asset_server.get_handle("sprites/cave_wall_4_brown.png");
     let cave_wall_texture_atlas =
         TextureAtlas::from_grid(cave_wall_handle, Vec2::new(32., 32.), 6, 3);
     let cave_wall_texture_atlas_handle = texture_atlases.add(cave_wall_texture_atlas);
@@ -56,6 +58,7 @@ pub fn setup(
         .insert(PlayerCamera);
 
     commands.insert_resource(super::resources::Materials {
+        cave_spider: materials.add(cave_spider.into()),
         player_material: materials.add(player_texture.into()),
         obstacle_material: materials.add(wall_texture.into()), //materials.add(Color::rgb(1., 1., 1.).into()),
         enemy_material: materials.add(enemy_texture.into()),

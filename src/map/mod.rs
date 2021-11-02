@@ -400,24 +400,55 @@ mod monster_spawner {
         }
 
         pub(super) fn spawn_monsters(&self, cmd: &mut Commands, materials: Res<Materials>) {
+            let mut rng = rand::thread_rng();
+
             for monster in &self.monster_set {
-                cmd.spawn_bundle(SpriteSheetBundle {
-                    texture_atlas: materials.flamey_sprite_sheet.clone(),
-                    transform: Transform::from_xyz(
-                        to_coords(monster.pos.x),
-                        to_coords(monster.pos.y),
-                        MONSTER_LAYER,
-                    ),
-                    ..Default::default()
-                })
-                .insert(Timer::from_seconds(0.1, true))
-                .insert_bundle(crate::components::npc::MeleeEnemy::new(
-                    "Flamey".into(),
-                    5,
-                    crate::components::Race::Elemental,
-                    1,
-                    crate::components::Stats::new(1, 1, 1, 1),
-                ));
+                let r = rng.gen_range(0. ..1.);
+
+                match r {
+                    _ if r >= 0.5 => {
+                        cmd.spawn_bundle(SpriteSheetBundle {
+                            texture_atlas: materials.flamey_sprite_sheet.clone(),
+                            transform: Transform::from_xyz(
+                                to_coords(monster.pos.x),
+                                to_coords(monster.pos.y),
+                                MONSTER_LAYER,
+                            ),
+                            ..Default::default()
+                        })
+                        .insert(Timer::from_seconds(0.1, true))
+                        .insert_bundle(
+                            crate::components::npc::MeleeEnemy::new(
+                                "Flamey".into(),
+                                5,
+                                crate::components::Race::Elemental,
+                                1,
+                                crate::components::Stats::new(1, 1, 1, 1),
+                            ),
+                        );
+                    }
+                    _ => {
+                        cmd.spawn_bundle(SpriteBundle {
+                            sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                            material: materials.cave_spider.clone(),
+                            transform: Transform::from_xyz(
+                                to_coords(monster.pos.x),
+                                to_coords(monster.pos.y),
+                                MONSTER_LAYER,
+                            ),
+                            ..Default::default()
+                        })
+                        .insert_bundle(
+                            crate::components::npc::MeleeEnemy::new(
+                                "Cave Spider".into(),
+                                5,
+                                crate::components::Race::Unknown,
+                                1,
+                                crate::components::Stats::new(1, 1, 1, 1),
+                            ),
+                        );
+                    }
+                }
             }
         }
 
