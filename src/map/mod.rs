@@ -65,21 +65,9 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
     for Tile { pos, kind } in map.tiles {
         match kind {
             TileType::Wall => {
-                // cmd.spawn_bundle(SpriteSheetBundle {
-                //     texture_atlas: materials.cave_wall_sprite_sheet.clone(),
-                //     transform: Transform::from_xyz(
-                //         to_coords(pos.x),
-                //         to_coords(pos.y),
-                //         MONSTER_LAYER,
-                //     ),
-                //     ..Default::default()
-                // })
-                // .insert(Blocking::wall())
-                // .insert(Timer::from_seconds(0.2, true));
-
-                cmd.spawn_bundle(SpriteBundle {
-                    material: materials.cave_wall.clone(),
-                    sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                let r = rng.gen_range(0. ..=0.99);
+                cmd.spawn_bundle(SpriteSheetBundle {
+                    texture_atlas: materials.cave_wall_sprite_sheet.clone(),
                     transform: Transform::from_xyz(
                         to_coords(pos.x),
                         to_coords(pos.y),
@@ -87,7 +75,20 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                     ),
                     ..Default::default()
                 })
-                .insert(Blocking::wall());
+                .insert(Blocking::wall())
+                .insert(Timer::from_seconds(r, true));
+
+                // cmd.spawn_bundle(SpriteBundle {
+                //     material: materials.cave_wall.clone(),
+                //     sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                //     transform: Transform::from_xyz(
+                //         to_coords(pos.x),
+                //         to_coords(pos.y),
+                //         MONSTER_LAYER,
+                //     ),
+                //     ..Default::default()
+                // })
+                // .insert(Blocking::wall());
             }
             TileType::Floor => {
                 cmd.spawn_bundle(SpriteBundle {
