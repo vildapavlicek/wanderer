@@ -37,6 +37,7 @@ pub fn setup(
     let floor_texture = asset_server.get_handle("images/cave_floor_dark.png");
     let cave_wall_texture = asset_server.get_handle("images/cave_wall4.png");
     let cave_spider = asset_server.get_handle("images/cave_spider.png");
+    let mole = asset_server.get_handle("images/mole.png");
 
     asset_server.load_folder("sprites").unwrap();
     let flamey_handle = asset_server.get_handle("sprites/flamey.png");
@@ -67,6 +68,7 @@ pub fn setup(
         flamey_sprite_sheet: texture_atlas_handle,
         cave_wall: materials.add(cave_wall_texture.into()),
         cave_wall_sprite_sheet: cave_wall_texture_atlas_handle,
+        mole: materials.add(mole.into()),
     });
 }
 

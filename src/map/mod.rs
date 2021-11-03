@@ -406,7 +406,7 @@ mod monster_spawner {
                 let r = rng.gen_range(0. ..1.);
 
                 match r {
-                    _ if r >= 0.5 => {
+                    _ if (0. ..0.25).contains(&r) => {
                         cmd.spawn_bundle(SpriteSheetBundle {
                             texture_atlas: materials.flamey_sprite_sheet.clone(),
                             transform: Transform::from_xyz(
@@ -422,6 +422,27 @@ mod monster_spawner {
                                 "Flamey".into(),
                                 5,
                                 crate::components::Race::Elemental,
+                                1,
+                                crate::components::Stats::new(1, 1, 1, 1),
+                            ),
+                        );
+                    }
+                    _ if (0.25..0.6).contains(&r) => {
+                        cmd.spawn_bundle(SpriteBundle {
+                            sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                            material: materials.mole.clone(),
+                            transform: Transform::from_xyz(
+                                to_coords(monster.pos.x),
+                                to_coords(monster.pos.y),
+                                MONSTER_LAYER,
+                            ),
+                            ..Default::default()
+                        })
+                        .insert_bundle(
+                            crate::components::npc::MeleeEnemy::new(
+                                "Cave MOLE".into(),
+                                5,
+                                crate::components::Race::Unknown,
                                 1,
                                 crate::components::Stats::new(1, 1, 1, 1),
                             ),

@@ -16,4 +16,5 @@ pub struct Materials {
     pub flamey_sprite_sheet: Handle<TextureAtlas>,
     pub cave_wall: Handle<ColorMaterial>,
     pub cave_wall_sprite_sheet: Handle<TextureAtlas>,
+    pub mole: Handle<ColorMaterial>,
 }
