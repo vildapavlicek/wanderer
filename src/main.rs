@@ -12,6 +12,7 @@ use crate::systems::{player, ranged};
 use bevy::log::{Level, LogSettings};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
+use big_brain::BigBrainPlugin;
 
 fn main() {
     App::build()
@@ -29,6 +30,7 @@ fn main() {
         .add_plugin(player::PlayerPlugins)
         .add_plugin(ranged::RangedPlugin)
         .add_plugin(EguiPlugin)
+        .add_plugin(BigBrainPlugin)
         .add_startup_system(systems::setup.system())
         .add_startup_system(update_logging.system())
         .add_startup_stage(
@@ -38,11 +40,16 @@ fn main() {
         .add_system_set(
             SystemSet::on_update(GameState::EnemyTurn)
                 .with_system(ai::scorers::player_in_range_scorer_system.system())
+                .label("npc_scorer"),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::EnemyTurn)
                 .with_system(
                     systems::enemy::enemy_turn
                         .system()
                         .chain(systems::enemy::enemy_move.system()),
-                ),
+                )
+                .after("npc_scorer"),
         )
         .add_system(systems::animation.system())
         .add_system(systems::ui::update_logs.system())

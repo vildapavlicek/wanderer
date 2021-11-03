@@ -42,57 +42,58 @@ use crate::components::ItemName;
 
 pub fn enemy_turn(
     player: Query<(Entity, &Transform), With<Player>>,
-    mut enemies: Query<
-        (
-            &Actor,
-            &Transform,
-            &MoveDirection,
-            &ItemName,
-            &mut ActionState,
-        ),
-        With<Move>,
-    >,
+    enemies: Query<(Entity, &Transform, &ItemName), With<Enemy>>,
+    mut actors: Query<(&Actor, &mut ActionState), With<Move>>,
     blockers: Query<(&Transform, &Blocking)>,
 ) -> Vec<NPCActionType> {
+    debug!("running enemy turn");
     let mut to_move: Vec<NPCActionType> = vec![];
 
     let (player_entity, player_pos) = player.single().expect("no player entity");
 
-    for (Actor(actor), enemy_pos, move_direction, name, mut action_state) in enemies.iter_mut() {
-        match *action_state {
-            big_brain::actions::ActionState::Requested => {
-                trace!("requested action to move!");
-                *action_state = big_brain::actions::ActionState::Success;
+    for (Actor(actor), mut action_state) in actors.iter_mut() {
+        debug!(?actor, "got actor");
+        if let Ok((entity, transform, name)) = enemies.get(*actor) {
+            debug!(?entity, "got mover");
+            match *action_state {
+                big_brain::actions::ActionState::Requested => {
+                    trace!("requested action to move!");
+                    *action_state = big_brain::actions::ActionState::Success;
+                }
+                _ => debug!(action_state = format!("{:?}", *action_state).as_str()),
             }
-            _ => debug!(action_state = format!("{:?}", *action_state).as_str()),
         }
-        // if enemy_pos.translation.x + super::MOVE_SIZE == player_pos.translation.x
-        //     && enemy_pos.translation.y == player_pos.translation.y
-        // {
-        //     to_move.push(NPCActionType::Attack(player_entity, name.to_string()));
-        //     break;
-        // }
-        //
-        // let future_x = match *move_direction {
-        //     MoveDirection::Left => enemy_pos.translation.x - super::MOVE_SIZE,
-        //     MoveDirection::Right => enemy_pos.translation.x + super::MOVE_SIZE,
-        // };
-        //
-        // let is_blocked = blockers.iter().any(|(blocker_pos, _)| {
-        //     blocker_pos.translation.x == future_x
-        //         && blocker_pos.translation.y == enemy_pos.translation.y
-        // });
-        //
-        // if !is_blocked {
-        //     to_move.push(NPCActionType::Move {
-        //         entity: *actor,
-        //         x: future_x,
-        //         y: enemy_pos.translation.y,
-        //     })
-        // } else {
-        //     to_move.push(NPCActionType::RevertDirection(*actor))
-        // }
     }
+
+    // for (enemy_pos, move_direction, name) in enemies.iter() {
+    //
+    //     // if enemy_pos.translation.x + super::MOVE_SIZE == player_pos.translation.x
+    //     //     && enemy_pos.translation.y == player_pos.translation.y
+    //     // {
+    //     //     to_move.push(NPCActionType::Attack(player_entity, name.to_string()));
+    //     //     break;
+    //     // }
+    //     //
+    //     // let future_x = match *move_direction {
+    //     //     MoveDirection::Left => enemy_pos.translation.x - super::MOVE_SIZE,
+    //     //     MoveDirection::Right => enemy_pos.translation.x + super::MOVE_SIZE,
+    //     // };
+    //     //
+    //     // let is_blocked = blockers.iter().any(|(blocker_pos, _)| {
+    //     //     blocker_pos.translation.x == future_x
+    //     //         && blocker_pos.translation.y == enemy_pos.translation.y
+    //     // });
+    //     //
+    //     // if !is_blocked {
+    //     //     to_move.push(NPCActionType::Move {
+    //     //         entity: *actor,
+    //     //         x: future_x,
+    //     //         y: enemy_pos.translation.y,
+    //     //     })
+    //     // } else {
+    //     //     to_move.push(NPCActionType::RevertDirection(*actor))
+    //     // }
+    // }
 
     to_move
 }
