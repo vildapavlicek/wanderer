@@ -322,6 +322,8 @@ fn test_hash_eq() {
 mod monster_spawner {
     use super::*;
     use crate::components::npc::MonsterStrength;
+    use big_brain::pickers::FirstToScore;
+    use big_brain::prelude::Thinker;
 
     type MonsterSet = HashSet<Monster>;
 
@@ -417,14 +419,20 @@ mod monster_spawner {
                             ..Default::default()
                         })
                         .insert(Timer::from_seconds(0.1, true))
-                        .insert_bundle(
-                            crate::components::npc::MeleeEnemy::new(
-                                "Flamey".into(),
-                                5,
-                                crate::components::Race::Elemental,
-                                1,
-                                crate::components::Stats::new(1, 1, 1, 1),
-                            ),
+                        .insert_bundle(crate::components::npc::MeleeEnemy::new(
+                            "Flamey".into(),
+                            5,
+                            crate::components::Race::Elemental,
+                            1,
+                            crate::components::Stats::new(1, 1, 1, 1),
+                        ))
+                        .insert(
+                            Thinker::build()
+                                .picker(FirstToScore { threshold: 0.95 })
+                                .when(
+                                    crate::ai::scorers::PlayerInRange::build(),
+                                    crate::ai::actions::Move::build(),
+                                ),
                         );
                     }
                     _ if (0.25..0.6).contains(&r) => {
@@ -438,14 +446,20 @@ mod monster_spawner {
                             ),
                             ..Default::default()
                         })
-                        .insert_bundle(
-                            crate::components::npc::MeleeEnemy::new(
-                                "Cave MOLE".into(),
-                                5,
-                                crate::components::Race::Unknown,
-                                1,
-                                crate::components::Stats::new(1, 1, 1, 1),
-                            ),
+                        .insert_bundle(crate::components::npc::MeleeEnemy::new(
+                            "Cave MOLE".into(),
+                            5,
+                            crate::components::Race::Unknown,
+                            1,
+                            crate::components::Stats::new(1, 1, 1, 1),
+                        ))
+                        .insert(
+                            Thinker::build()
+                                .picker(FirstToScore { threshold: 0.95 })
+                                .when(
+                                    crate::ai::scorers::PlayerInRange::build(),
+                                    crate::ai::actions::Move::build(),
+                                ),
                         );
                     }
                     _ => {
@@ -459,14 +473,20 @@ mod monster_spawner {
                             ),
                             ..Default::default()
                         })
-                        .insert_bundle(
-                            crate::components::npc::MeleeEnemy::new(
-                                "Cave Spider".into(),
-                                5,
-                                crate::components::Race::Unknown,
-                                1,
-                                crate::components::Stats::new(1, 1, 1, 1),
-                            ),
+                        .insert_bundle(crate::components::npc::MeleeEnemy::new(
+                            "Cave Spider".into(),
+                            5,
+                            crate::components::Race::Unknown,
+                            1,
+                            crate::components::Stats::new(1, 1, 1, 1),
+                        ))
+                        .insert(
+                            Thinker::build()
+                                .picker(FirstToScore { threshold: 0.95 })
+                                .when(
+                                    crate::ai::scorers::PlayerInRange::build(),
+                                    crate::ai::actions::Move::build(),
+                                ),
                         );
                     }
                 }
@@ -487,11 +507,6 @@ mod monster_spawner {
                 _ => MonsterStrength::Weak,
             }
         }
-
-        // fn new_monster(&mut self, pos: IVec2) {
-        //     let strength = self.decide_monster_strength();
-        //     self.monster_set.insert(Monster::new(pos, strength))
-        // }
     }
 
     #[derive(Debug, Copy, Clone)]

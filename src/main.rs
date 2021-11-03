@@ -1,6 +1,7 @@
 #![windows_subsystem = "windows"] // disables console window, disable in VSCode, otherwise there is no output in console
 #![deny(clippy::float_cmp)]
 #![allow(unused)]
+mod ai;
 mod components;
 mod map;
 mod resources;
@@ -35,11 +36,13 @@ fn main() {
             SystemStage::single(map::generate_map.system()), // systems::grid::generate_map.system()
         )
         .add_system_set(
-            SystemSet::on_update(GameState::EnemyTurn).with_system(
-                systems::enemy::enemy_turn
-                    .system()
-                    .chain(systems::enemy::enemy_move.system()),
-            ),
+            SystemSet::on_update(GameState::EnemyTurn)
+                .with_system(ai::scorers::player_in_range_scorer_system.system())
+                .with_system(
+                    systems::enemy::enemy_turn
+                        .system()
+                        .chain(systems::enemy::enemy_move.system()),
+                ),
         )
         .add_system(systems::animation.system())
         .add_system(systems::ui::update_logs.system())
