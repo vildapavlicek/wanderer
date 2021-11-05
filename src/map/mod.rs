@@ -408,8 +408,8 @@ mod monster_spawner {
                 let r = rng.gen_range(0. ..1.);
 
                 match r {
-                    _ if (0. ..0.25).contains(&r) => {
-                        cmd.spawn_bundle(SpriteSheetBundle {
+                    _ if (0. ..0.25).contains(&r) => cmd
+                        .spawn_bundle(SpriteSheetBundle {
                             texture_atlas: materials.flamey_sprite_sheet.clone(),
                             transform: Transform::from_xyz(
                                 to_coords(monster.pos.x),
@@ -430,13 +430,13 @@ mod monster_spawner {
                             Thinker::build()
                                 .picker(FirstToScore { threshold: 0.95 })
                                 .when(
-                                    crate::ai::scorers::PlayerInRange::build(),
+                                    crate::ai::scorers::PlayerDistance::build(),
                                     crate::ai::actions::Move::build(),
-                                ),
-                        );
-                    }
-                    _ if (0.25..0.6).contains(&r) => {
-                        cmd.spawn_bundle(SpriteBundle {
+                                )
+                                .otherwise(crate::ai::actions::Skip::build()),
+                        ),
+                    _ if (0.25..0.6).contains(&r) => cmd
+                        .spawn_bundle(SpriteBundle {
                             sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
                             material: materials.mole.clone(),
                             transform: Transform::from_xyz(
@@ -457,13 +457,13 @@ mod monster_spawner {
                             Thinker::build()
                                 .picker(FirstToScore { threshold: 0.95 })
                                 .when(
-                                    crate::ai::scorers::PlayerInRange::build(),
+                                    crate::ai::scorers::PlayerDistance::build(),
                                     crate::ai::actions::Move::build(),
-                                ),
-                        );
-                    }
-                    _ => {
-                        cmd.spawn_bundle(SpriteBundle {
+                                )
+                                .otherwise(crate::ai::actions::Skip::build()),
+                        ),
+                    _ => cmd
+                        .spawn_bundle(SpriteBundle {
                             sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
                             material: materials.cave_spider.clone(),
                             transform: Transform::from_xyz(
@@ -484,12 +484,12 @@ mod monster_spawner {
                             Thinker::build()
                                 .picker(FirstToScore { threshold: 0.95 })
                                 .when(
-                                    crate::ai::scorers::PlayerInRange::build(),
+                                    crate::ai::scorers::PlayerDistance::build(),
                                     crate::ai::actions::Move::build(),
-                                ),
-                        );
-                    }
-                }
+                                )
+                                .otherwise(crate::ai::actions::Skip::build()),
+                        ),
+                };
             }
         }
 

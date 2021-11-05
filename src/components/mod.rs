@@ -1,9 +1,31 @@
 pub mod npc;
 pub mod player;
 
-use bevy::prelude::Bundle;
+use bevy::prelude::{Bundle, Entity};
 use std::fmt::Formatter;
 use std::ops::Add;
+
+enum Occupied {
+    Npc(Entity),
+    Player,
+    Wall,
+}
+
+pub struct Tile {
+    occupied: Option<Occupied>,
+}
+
+impl Tile {
+    pub fn wall() -> Self {
+        Tile {
+            occupied: Some(Occupied::Wall),
+        }
+    }
+
+    pub fn floor() -> Self {
+        Tile { occupied: None }
+    }
+}
 
 /// This represents name of the thing, NPC or anything that needs to be named
 #[derive(Debug)]
@@ -29,6 +51,8 @@ impl std::default::Default for State {
         Self::Idle
     }
 }
+
+pub struct Blocks;
 
 /// This is component that marks that it will block your path
 /// To make it easier it has type of blocking. If you are blocked by enemy (you'd bump into them) it should be instead considered as attack

@@ -8,7 +8,7 @@ mod resources;
 mod systems;
 
 use crate::resources::GameState;
-use crate::systems::{player, ranged};
+use crate::systems::{player, ranged, PlayerSystems};
 use bevy::log::{Level, LogSettings};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
@@ -37,19 +37,25 @@ fn main() {
             "generate_map",
             SystemStage::single(map::generate_map.system()), // systems::grid::generate_map.system()
         )
-        .add_system_set(
-            SystemSet::on_update(GameState::EnemyTurn)
-                .with_system(ai::scorers::player_in_range_scorer_system.system())
-                .label("npc_scorer"),
-        )
+        // .add_system_set(
+        //     SystemSet::on_update(GameState::EnemyScorer)
+        //         .with_system(ai::scorers::player_distance_scorer_system.system()),
+        // )
+        .add_system(ai::scorers::should_move_scorer.system())
+        // .add_system(ai::scorers::should_skip_scorer.system())
         .add_system_set(
             SystemSet::on_update(GameState::EnemyTurn)
                 .with_system(
-                    systems::enemy::enemy_turn
+                    systems::enemy::enemy_movement
                         .system()
                         .chain(systems::enemy::enemy_move.system()),
                 )
-                .after("npc_scorer"),
+                .with_system(systems::enemy::enemy_skip_turn.system())
+                .with_system(systems::enemy::resolve_end_turn.system()),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::PrepareEnemyTurn)
+                .with_system(systems::enemy::prepare_enemy_turn.system()),
         )
         .add_system(systems::animation.system())
         .add_system(systems::ui::update_logs.system())

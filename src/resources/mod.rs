@@ -3,8 +3,10 @@ use bevy::prelude::*;
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum GameState {
     PlayerTurn,
+    PrepareEnemyTurn,
     EnemyTurn,
     RangedTargeting,
+    EnemyScorer,
 }
 pub struct Materials {
     pub cave_spider: Handle<ColorMaterial>,

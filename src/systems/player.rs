@@ -111,7 +111,7 @@ pub fn handle_key_input(
         }
         PlayerAction::SkipTurn => {
             game_state
-                .set(GameState::EnemyTurn)
+                .set(GameState::PrepareEnemyTurn)
                 .expect("failed to set enemy turn after player skipping turn");
             None
         }
@@ -147,7 +147,7 @@ pub fn player_move_or_attack(
             camera_pos.translation = Vec3::new(x, y, camera_pos.translation.z);
 
             game_state
-                .set(GameState::EnemyTurn)
+                .set(GameState::PrepareEnemyTurn)
                 .expect("failed to set game state to enemy turn after player movement");
         }
         Some(PlayerActionEvent::Attack(target)) => {
@@ -157,7 +157,7 @@ pub fn player_move_or_attack(
             }
 
             game_state
-                .set(GameState::EnemyTurn)
+                .set(GameState::PrepareEnemyTurn)
                 .expect("failed to set game state to enemy turn after player attack");
         }
         _ => (),
