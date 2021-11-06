@@ -96,59 +96,59 @@ pub fn enemy_turn(
 
 fn resolve_position(npc: &Transform, player: &Transform, blockers: Vec<Transform>) -> Option<Vec3> {
     // if player is right to the npc
-    if player.translation.x > npc.translation.x {
-        if let None = blockers.iter().find(|pos| {
+    if player.translation.x > npc.translation.x
+        && !blockers.iter().any(|pos| {
             pos.translation.x == npc.translation.x + super::SPRITE_SIZE
                 && pos.translation.y == npc.translation.y
-        }) {
-            return Some(Vec3::new(
-                npc.translation.x + super::SPRITE_SIZE,
-                npc.translation.y,
-                npc.translation.z,
-            ));
-        }
+        })
+    {
+        return Some(Vec3::new(
+            npc.translation.x + super::SPRITE_SIZE,
+            npc.translation.y,
+            npc.translation.z,
+        ));
     }
 
     // if player is left to the npc
-    if player.translation.x < npc.translation.x {
-        if let None = blockers.iter().find(|pos| {
+    if player.translation.x < npc.translation.x
+        && !blockers.iter().any(|pos| {
             pos.translation.x == npc.translation.x - super::SPRITE_SIZE
                 && pos.translation.y == npc.translation.y
-        }) {
-            return Some(Vec3::new(
-                npc.translation.x - super::SPRITE_SIZE,
-                npc.translation.y,
-                npc.translation.z,
-            ));
-        }
+        })
+    {
+        return Some(Vec3::new(
+            npc.translation.x - super::SPRITE_SIZE,
+            npc.translation.y,
+            npc.translation.z,
+        ));
     }
 
     // if player is above the npc
-    if player.translation.y > npc.translation.y {
-        if let None = blockers.iter().find(|pos| {
+    if player.translation.y > npc.translation.y
+        && !blockers.iter().any(|pos| {
             pos.translation.y == npc.translation.y + super::SPRITE_SIZE
                 && pos.translation.x == npc.translation.x
-        }) {
-            return Some(Vec3::new(
-                npc.translation.x,
-                npc.translation.y + super::SPRITE_SIZE,
-                npc.translation.z,
-            ));
-        }
+        })
+    {
+        return Some(Vec3::new(
+            npc.translation.x,
+            npc.translation.y + super::SPRITE_SIZE,
+            npc.translation.z,
+        ));
     }
 
     // if player is bellow the npc
-    if player.translation.y < npc.translation.y {
-        if let None = blockers.iter().find(|pos| {
+    if player.translation.y < npc.translation.y
+        && !blockers.iter().any(|pos| {
             pos.translation.y == npc.translation.y - super::SPRITE_SIZE
                 && pos.translation.x == npc.translation.x
-        }) {
-            return Some(Vec3::new(
-                npc.translation.x,
-                npc.translation.y - super::SPRITE_SIZE,
-                npc.translation.z,
-            ));
-        }
+        })
+    {
+        return Some(Vec3::new(
+            npc.translation.x,
+            npc.translation.y - super::SPRITE_SIZE,
+            npc.translation.z,
+        ));
     }
 
     None
