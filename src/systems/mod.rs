@@ -105,24 +105,18 @@ pub fn cheats(
     if key_input.just_pressed(KeyCode::H) {
         trace!("pressed H");
         for (entity, _, blocking) in query.iter_mut() {
-            match blocking.blocking_type {
-                BlockingType::Wall => {
+            if let BlockingType::Wall = blocking.blocking_type {
+                cmd.entity(entity).insert(OutsideFrustum);
+            }
+        }
+
+        if key_input.just_pressed(KeyCode::G) {
+            trace!("pressed G");
+            for (entity, _, blocking) in query.iter_mut() {
+                if let BlockingType::Wall = blocking.blocking_type {
                     cmd.entity(entity).insert(OutsideFrustum);
                 }
-                _ => (),
             }
-        }
-    };
-
-    if key_input.just_pressed(KeyCode::G) {
-        trace!("pressed G");
-        for (entity, _, blocking) in query.iter_mut() {
-            match blocking.blocking_type {
-                BlockingType::Wall => {
-                    cmd.entity(entity).remove::<OutsideFrustum>();
-                }
-                _ => (),
-            }
-        }
+        };
     }
 }

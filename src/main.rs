@@ -1,5 +1,6 @@
 #![windows_subsystem = "windows"] // disables console window, disable in VSCode, otherwise there is no output in console
-#![deny(clippy::float_cmp)]
+#![allow(clippy::float_cmp)]
+#![allow(clippy::type_complexity)]
 #![allow(unused)]
 mod ai;
 mod components;

@@ -57,7 +57,7 @@ impl LogEvent {
     pub fn player_attack(defender: String, damage: u32) -> Self {
         Self::PlayerAttack {
             time: chrono::Local::now(),
-            defender: EventTarget::NPC(defender),
+            defender: EventTarget::Npc(defender),
             damage,
         }
     }
@@ -65,7 +65,7 @@ impl LogEvent {
     pub fn npc_attacks_player(attacker: String, damage: u32) -> Self {
         Self::NPCAttackPlayer {
             time: chrono::Local::now(),
-            attacker: EventTarget::NPC(attacker),
+            attacker: EventTarget::Npc(attacker),
             damage,
         }
     }
@@ -73,8 +73,8 @@ impl LogEvent {
     pub fn npc_attacks_npc(attacker: String, defender: String, damage: u32) -> Self {
         Self::NPCAttackNPC {
             time: chrono::Local::now(),
-            attacker: EventTarget::NPC(attacker),
-            defender: EventTarget::NPC(defender),
+            attacker: EventTarget::Npc(attacker),
+            defender: EventTarget::Npc(defender),
             damage,
         }
     }
@@ -129,13 +129,13 @@ impl std::fmt::Display for LogEvent {
 #[derive(Debug, Clone)]
 pub enum EventTarget {
     Player,
-    NPC(String),
+    Npc(String),
 }
 
 impl EventTarget {
     pub fn inner(&self) -> Cow<str> {
         match self {
-            Self::NPC(v) => Cow::Borrowed(v.as_str()),
+            Self::Npc(v) => Cow::Borrowed(v.as_str()),
             Self::Player => Cow::Borrowed("You"),
         }
     }
