@@ -77,18 +77,6 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                 })
                 .insert(Blocking::wall())
                 .insert(Timer::from_seconds(r, true));
-
-                // cmd.spawn_bundle(SpriteBundle {
-                //     material: materials.cave_wall.clone(),
-                //     sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-                //     transform: Transform::from_xyz(
-                //         to_coords(pos.x),
-                //         to_coords(pos.y),
-                //         MONSTER_LAYER,
-                //     ),
-                //     ..Default::default()
-                // })
-                // .insert(Blocking::wall());
             }
             TileType::Floor => {
                 cmd.spawn_bundle(SpriteBundle {

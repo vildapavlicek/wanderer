@@ -135,11 +135,6 @@ pub fn resolve_end_turn(
             .set(GameState::PlayerTurn)
             .expect("failed to set GameState to PlayerTurn");
     }
-    // else {
-    //     for entity in query.iter() {
-    //         debug!(?entity, "still can act");
-    //     }
-    // }
 }
 
 pub fn prepare_enemy_turn(
@@ -155,87 +150,6 @@ pub fn prepare_enemy_turn(
         .set(GameState::EnemyTurn)
         .expect("failed to set GameState to PlayerTurn");
 }
-
-// pub fn resolve_end_turn(
-//     enemy: Query<Entity, With<Enemy>>,
-//     actors: Query<(Entity, &Actor, &ActionState), With<Move>>,
-//     mut game_state: ResMut<State<GameState>>,
-// ) {
-//     debug!("resolving enemy turn end");
-//
-//     match actors.iter().find(|(_, _, state)| match state {
-//         ActionState::Requested => true,
-//         _ => false,
-//     }) {
-//         Some((entity, actor, state)) => {
-//             debug!(?entity, ?actor, ?state, "still not finished their turn")
-//         }
-//         None => game_state
-//             .set(GameState::PlayerTurn)
-//             .expect("failed to set GameState to PlayerTurn"),
-//     };
-// }
-
-//
-// pub fn enemy_movement(
-//     player: Query<(Entity, &Transform), With<Player>>,
-//     enemies: Query<(Entity, &Transform), With<Enemy>>,
-//     mut actors: Query<(&Actor, &mut ActionState), With<Move>>,
-//     blockers: Query<(&Transform, &Blocking)>,
-// ) -> Vec<(Entity, Vec3)> {
-//     debug!("running enemy turn");
-//     let mut to_move: Vec<(Entity, Vec3)> = vec![];
-//
-//     let (player_entity, player_pos) = player.single().expect("no player entity");
-//
-//     for (Actor(actor), mut action_state) in actors.iter_mut() {
-//         trace!(?actor, "got actor");
-//         if let Ok((entity, npc_transform)) = enemies.get(*actor) {
-//             trace!(?entity, "got mover");
-//             match *action_state {
-//                 big_brain::actions::ActionState::Requested => {
-//                     trace!("requested action to move!");
-//
-//                     let mut possible_blockers = blockers
-//                         .iter()
-//                         .filter_map(|(b_trans, _)| {
-//                             if npc_transform.translation.x + super::SPRITE_SIZE
-//                                 == b_trans.translation.x
-//                                 || npc_transform.translation.x - super::SPRITE_SIZE
-//                                     == b_trans.translation.x
-//                                 || npc_transform.translation.y + super::SPRITE_SIZE
-//                                     == b_trans.translation.y
-//                                 || npc_transform.translation.y - super::SPRITE_SIZE
-//                                     == b_trans.translation.y
-//                             {
-//                                 Some(b_trans.to_owned())
-//                             } else {
-//                                 None
-//                             }
-//                         })
-//                         .collect::<Vec<Transform>>();
-//
-//                     possible_blockers.append(
-//                         &mut to_move
-//                             .iter()
-//                             .map(|(_, pos)| Transform::from_xyz(pos.x, pos.y, pos.z))
-//                             .collect(),
-//                     );
-//
-//                     if let Some(future_pos) =
-//                         resolve_position(npc_transform, player_pos, possible_blockers)
-//                     {
-//                         to_move.push((entity, future_pos));
-//                     };
-//                     *action_state = big_brain::actions::ActionState::Success;
-//                 }
-//                 _ => debug!(action_state = format!("{:?}", *action_state).as_str()),
-//             }
-//         }
-//     }
-//
-//     to_move
-// }
 
 fn resolve_position(npc: &Transform, player: &Transform, blockers: Vec<Transform>) -> Option<Vec3> {
     // if player is right to the npc
@@ -296,21 +210,3 @@ fn resolve_position(npc: &Transform, player: &Transform, blockers: Vec<Transform
 
     None
 }
-
-// use crate::systems::ui::LogEvent;
-//
-// pub fn enemy_move(
-//     In(to_move): In<Vec<(Entity, Vec3)>>,
-//     mut q: Query<(Entity, &mut Transform)>,
-//     mut game_state: ResMut<State<GameState>>,
-//     mut log_writer: EventWriter<LogEvent>,
-// ) {
-//     for (entity, pos) in to_move.into_iter() {
-//         if let Ok((_, mut transform)) = q.get_mut(entity) {
-//             transform.translation = pos;
-//         }
-//     }
-//     game_state
-//         .set(GameState::PlayerTurn)
-//         .expect("failed to set GameState to PlayerTurn");
-// }

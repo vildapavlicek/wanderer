@@ -38,12 +38,7 @@ fn main() {
             "generate_map",
             SystemStage::single(map::generate_map.system()), // systems::grid::generate_map.system()
         )
-        // .add_system_set(
-        //     SystemSet::on_update(GameState::EnemyScorer)
-        //         .with_system(ai::scorers::player_distance_scorer_system.system()),
-        // )
         .add_system(ai::scorers::should_move_scorer.system())
-        // .add_system(ai::scorers::should_skip_scorer.system())
         .add_system_set(
             SystemSet::on_update(GameState::EnemyTurn)
                 .with_system(
