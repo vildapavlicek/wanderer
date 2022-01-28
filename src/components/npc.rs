@@ -1,4 +1,4 @@
-use bevy::prelude::Bundle;
+use bevy::prelude::{Bundle, Component};
 use rand::Rng;
 
 // Either make this more sensible, like better naming or remove
@@ -10,7 +10,7 @@ use rand::Rng;
 //     blocking: super::Blocking,
 // }
 
-#[derive(Bundle)]
+#[derive(Debug, Bundle, Component)]
 pub struct MeleeEnemy {
     health: super::Health,
     name: super::ItemName,
@@ -46,7 +46,7 @@ impl MeleeEnemy {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Component)]
 pub enum MonsterStrength {
     Weak,
     Normal,

@@ -39,7 +39,7 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
 
     // ---------------------- RNG rooms
     let mut rng = rand::thread_rng();
-    let n_rooms = rng.gen_range(5..=10);
+    let n_rooms: i32 = rng.gen_range(5..=10);
 
     for _ in 0..=n_rooms {
         let x = rng.gen_range(-25..=25);
@@ -92,8 +92,11 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
             }
             TileType::Floor => {
                 cmd.spawn_bundle(SpriteBundle {
-                    material: materials.floor_material.clone(),
-                    sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                    texture: materials.floor_material.clone(),
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                        ..Default::default()
+                    },
                     transform: Transform::from_xyz(to_coords(pos.x), to_coords(pos.y), FLOOR_LAYER),
                     ..Default::default()
                 });
@@ -405,7 +408,7 @@ mod monster_spawner {
             let mut rng = rand::thread_rng();
 
             for monster in &self.monster_set {
-                let r = rng.gen_range(0. ..1.);
+                let r: f64 = rng.gen_range(0. ..1.);
 
                 match r {
                     _ if (0. ..0.25).contains(&r) => {
@@ -437,8 +440,11 @@ mod monster_spawner {
                     }
                     _ if (0.25..0.6).contains(&r) => {
                         cmd.spawn_bundle(SpriteBundle {
-                            sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-                            material: materials.mole.clone(),
+                            sprite: Sprite {
+                                custom_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                                ..Default::default()
+                            },
+                            texture: materials.mole.clone(),
                             transform: Transform::from_xyz(
                                 to_coords(monster.pos.x),
                                 to_coords(monster.pos.y),
@@ -464,8 +470,11 @@ mod monster_spawner {
                     }
                     _ => {
                         cmd.spawn_bundle(SpriteBundle {
-                            sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
-                            material: materials.cave_spider.clone(),
+                            sprite: Sprite {
+                                custom_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                                ..Default::default()
+                            },
+                            texture: materials.cave_spider.clone(),
                             transform: Transform::from_xyz(
                                 to_coords(monster.pos.x),
                                 to_coords(monster.pos.y),

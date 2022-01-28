@@ -1,17 +1,20 @@
 use crate::components::Blocking;
-use bevy::prelude::Bundle;
+use bevy::prelude::{Bundle, Component};
 
+#[derive(Debug, Component)]
 pub struct Player;
+#[derive(Debug, Component)]
 pub struct PlayerCamera;
 
 pub const PLAYER_MAX_HEALTH: usize = 100;
 
+#[derive(Debug, Component)]
 pub struct XP {
     current: usize,
     max: usize,
 }
 
-#[derive(Bundle)]
+#[derive(Debug, Bundle, Component)]
 pub struct PlayerBundle {
     _p: Player,
     name: super::ItemName,

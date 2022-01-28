@@ -5,7 +5,7 @@ use bevy::ecs::prelude::{Commands, Query, With};
 use bevy::prelude::*;
 use big_brain::prelude::*;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Component)]
 pub struct PlayerInRange;
 
 impl PlayerInRange {
@@ -29,7 +29,7 @@ pub fn player_in_range_scorer_system(
     mut query: Query<(&Actor, &mut Score), With<PlayerInRange>>,
 ) {
     trace!("running scorer system");
-    let player_translation = player.single().expect("no player found").translation;
+    let player_translation = player.single().translation;
     debug!(%player_translation);
 
     for (Actor(actor), mut score) in query.iter_mut() {

@@ -2,7 +2,7 @@ pub mod scorers;
 
 pub mod actions {
     use bevy::ecs::entity::Entity;
-    use bevy::ecs::prelude::Commands;
+    use bevy::ecs::prelude::*;
     use big_brain::prelude::*;
 
     // #[derive(Debug, Clone, Copy)]
@@ -23,7 +23,7 @@ pub mod actions {
     //     }
     // }
 
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, Component)]
     pub struct Move;
 
     impl Move {

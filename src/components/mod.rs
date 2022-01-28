@@ -1,12 +1,12 @@
 pub mod npc;
 pub mod player;
 
-use bevy::prelude::Bundle;
+use bevy::prelude::{Bundle, Component};
 use std::fmt::Formatter;
 use std::ops::Add;
 
 /// This represents name of the thing, NPC or anything that needs to be named
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct ItemName(pub String);
 impl std::fmt::Display for ItemName {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -14,10 +14,10 @@ impl std::fmt::Display for ItemName {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct Level(pub i32);
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum State {
     Idle,
     Moving,
@@ -32,7 +32,7 @@ impl std::default::Default for State {
 
 /// This is component that marks that it will block your path
 /// To make it easier it has type of blocking. If you are blocked by enemy (you'd bump into them) it should be instead considered as attack
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct Blocking {
     pub blocking_type: BlockingType,
 }
@@ -67,7 +67,7 @@ impl Blocking {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum BlockingType {
     Wall,
     Obstacle,
@@ -76,7 +76,7 @@ pub enum BlockingType {
 }
 
 /// Component that stores max possible health as well as tracks the current health
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct Health {
     pub current: i32,
     max: i32,
@@ -95,9 +95,10 @@ impl Health {
 }
 
 /// Compotent that should be attached to something that is regarded to be enemy to player. Should go in hand with Blocking::enemy()
+#[derive(Debug, Component)]
 pub struct Enemy;
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum Race {
     Unknown,
     Human,
@@ -121,7 +122,7 @@ impl std::fmt::Display for Race {
 }
 
 /// Rarity types of items that can be found. Each rarity level aslo shoud add some bonuses
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum Rarity {
     Damaged,
     Common,
@@ -144,7 +145,7 @@ impl Rarity {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum WeaponType {
     Unarmed,
     Sword,
@@ -177,7 +178,7 @@ macro_rules! stat_inner {
     };
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct Strength(usize);
 stat_inner!(Strength);
 impl Add<Strength> for usize {
@@ -196,7 +197,7 @@ impl Add<Strength> for i32 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct Agility(usize);
 stat_inner!(Agility);
 impl Add<Agility> for usize {
@@ -215,7 +216,7 @@ impl Add<Agility> for i32 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct Endurance(usize);
 stat_inner!(Endurance);
 impl Add<Endurance> for usize {
@@ -234,7 +235,7 @@ impl Add<Endurance> for i32 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct Intelligence(usize);
 stat_inner!(Intelligence);
 impl Add<Intelligence> for usize {
@@ -258,7 +259,7 @@ stat_fmt!(Agility);
 stat_fmt!(Endurance);
 stat_fmt!(Intelligence);
 
-#[derive(Bundle)]
+#[derive(Debug, Bundle, Component)]
 pub struct Stats {
     strength: Strength,
     agility: Agility,
@@ -277,7 +278,7 @@ impl Stats {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum WeaponBonusType {
     Strength(Strength),
     Agility(Agility),
@@ -285,14 +286,14 @@ pub enum WeaponBonusType {
     Intelligence(Intelligence),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum WeaponRangeType {
     Ranged(i32, i32),
     Melee,
     Aoe,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub struct Weapon {
     name: String,
     attack_range: WeaponRangeType,
@@ -302,6 +303,7 @@ pub struct Weapon {
     bonuses: Option<Vec<WeaponBonusType>>,
 }
 
+#[derive(Debug, Component)]
 pub enum ArmorType {
     Head,
     Torso,
@@ -310,6 +312,7 @@ pub enum ArmorType {
     Feet,
 }
 
+#[derive(Debug, Component)]
 pub struct Armor {
     name: String,
     rarity: Rarity,

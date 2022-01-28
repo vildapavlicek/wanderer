@@ -16,7 +16,7 @@ use bevy_egui::EguiPlugin;
 use big_brain::BigBrainPlugin;
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
             title: "Lonely Wanderer".to_string(),
             width: 1024.0,

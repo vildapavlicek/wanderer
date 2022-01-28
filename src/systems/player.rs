@@ -1,20 +1,20 @@
-use crate::resources::GameState;
 /// Systems related to the player
 use crate::{
     components::{
         player::{Player, PlayerBundle, PlayerCamera},
         Blocking, Enemy, Health,
     },
-    resources::Materials,
+    resources::{GameState, Materials},
     systems::PlayerSystems,
 };
 use bevy::prelude::*;
+use std::default::Default;
 
 pub struct PlayerPlugins;
 
 impl Plugin for PlayerPlugins {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_stage("spawn_player", SystemStage::single(spawn_player.system()))
+    fn build(&self, app: &mut App) {
+        app.add_startup_stage("spawn_player", SystemStage::single(spawn_player))
             .add_system_set(
                 SystemSet::on_update(GameState::PlayerTurn).with_system(
                     handle_key_input
@@ -30,8 +30,11 @@ impl Plugin for PlayerPlugins {
 pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
     commands
         .spawn_bundle(SpriteBundle {
-            material: materials.player_material.clone(),
-            sprite: Sprite::new(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
+            texture: materials.player_material.clone(),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
+                ..Default::default()
+            },
             transform: Transform::from_xyz(0., 0., super::PLAYER_LAYER),
             ..Default::default()
         })
@@ -58,7 +61,7 @@ pub fn handle_key_input(
     player_position: Query<&Transform, With<Player>>,
     blocker_position: Query<(Entity, &Transform, &Blocking)>,
 ) -> Option<PlayerActionEvent> {
-    let player_position = player_position.single().expect("no player position!!");
+    let player_position = player_position.single();
 
     let action = if key_input.just_pressed(KeyCode::Left) {
         PlayerAction::Movement(
@@ -89,7 +92,7 @@ pub fn handle_key_input(
     };
 
     // need to update or the last key input gets cached and freezes app
-    key_input.update();
+    key_input.clear();
 
     match action {
         PlayerAction::Movement(x, y) => {
@@ -125,26 +128,25 @@ pub fn player_move_or_attack(
     In(event): In<Option<PlayerActionEvent>>,
     mut game_state: ResMut<State<GameState>>,
     mut player_camera_pos: QuerySet<(
-        Query<&mut Transform, With<Player>>,
-        Query<&mut Transform, With<PlayerCamera>>,
+        QueryState<&mut Transform, With<Player>>,
+        QueryState<&mut Transform, With<PlayerCamera>>,
     )>,
     mut enemies: Query<(Entity, &mut Health, &crate::components::ItemName), With<Enemy>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
     match event {
         Some(PlayerActionEvent::Move(x, y)) => {
-            let mut player_pos = player_camera_pos
-                .q0_mut()
-                .single_mut()
-                .expect("no player found");
+            {
+                let mut p_query = player_camera_pos.q0();
+                let mut ppos = p_query.single_mut();
+                ppos.translation = Vec3::new(x, y, ppos.translation.z);
+            }
 
-            player_pos.translation = Vec3::new(x, y, player_pos.translation.z);
-
-            let mut camera_pos = player_camera_pos
-                .q1_mut()
-                .single_mut()
-                .expect("no player camera found");
-            camera_pos.translation = Vec3::new(x, y, camera_pos.translation.z);
+            {
+                let mut p_query = player_camera_pos.q1();
+                let mut ppos = p_query.single_mut();
+                ppos.translation = Vec3::new(x, y, ppos.translation.z);
+            }
 
             game_state
                 .set(GameState::EnemyTurn)
