@@ -5,7 +5,7 @@ use bevy::prelude::*;
 pub struct RangedPlugin;
 
 impl Plugin for RangedPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_system_set(
             SystemSet::on_update(GameState::RangedTargeting)
                 .with_system(targeting.system().chain(ranged_attack.system())),
@@ -34,7 +34,7 @@ pub fn targeting(
     q_camera: Query<&Transform, With<PlayerCamera>>,
 ) -> Option<RangedAttackEvent> {
     if key_input.just_pressed(KeyCode::Escape) {
-        key_input.update();
+        // key_input.update();
         game_state
             .set(GameState::PlayerTurn)
             .expect("failed to set GameState to PlayerTurn");
@@ -53,7 +53,7 @@ pub fn targeting(
         let p = pos - size / 2.0;
 
         // assuming there is exactly one main camera entity, so this is OK
-        let camera_transform = q_camera.single().expect("PlayerCamera not found!");
+        let camera_transform = q_camera.single();
 
         // apply the camera transform
         let pos_wld = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);

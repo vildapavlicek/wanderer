@@ -5,7 +5,7 @@ pub mod ui;
 
 use crate::components::player::{Player, PlayerCamera};
 use bevy::prelude::*;
-use bevy::render::draw::OutsideFrustum;
+
 use bevy_egui::EguiContext;
 
 const SPRITE_SIZE: f32 = 32.;
@@ -59,16 +59,16 @@ pub fn setup(
         .insert(PlayerCamera);
 
     commands.insert_resource(super::resources::Materials {
-        cave_spider: materials.add(cave_spider.into()),
-        player_material: materials.add(player_texture.into()),
-        obstacle_material: materials.add(wall_texture.into()), //materials.add(Color::rgb(1., 1., 1.).into()),
-        enemy_material: materials.add(enemy_texture.into()),
-        floor_material: materials.add(floor_texture.into()),
-        player24x24_material: materials.add(player_texture_24x24.into()),
+        cave_spider,
+        player_material: player_texture,
+        obstacle_material: wall_texture, //materials.add(Color::rgb(1., 1., 1.).into()),
+        enemy_material: enemy_texture,
+        floor_material: floor_texture,
+        player24x24_material: player_texture_24x24,
         flamey_sprite_sheet: texture_atlas_handle,
-        cave_wall: materials.add(cave_wall_texture.into()),
+        cave_wall: cave_wall_texture,
         cave_wall_sprite_sheet: cave_wall_texture_atlas_handle,
-        mole: materials.add(mole.into()),
+        mole,
     });
 }
 
@@ -82,7 +82,7 @@ pub fn animation(
 
         if timer.finished() {
             let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-            sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
+            sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len());
         }
     }
 }
@@ -99,21 +99,23 @@ pub fn clear_dead(mut command: Commands, bodies: Query<(Entity, &Health), Withou
 pub fn cheats(
     mut cmd: Commands,
     mut key_input: ResMut<Input<KeyCode>>,
-    mut query: Query<(Entity, &Visible, &Blocking)>,
+    mut query: Query<(Entity, &mut Visibility, &Blocking)>,
 ) {
     if key_input.just_pressed(KeyCode::H) {
         trace!("pressed H");
-        for (entity, _, blocking) in query.iter_mut() {
+        for (entity, mut visibility, blocking) in query.iter_mut() {
             if let BlockingType::Wall = blocking.blocking_type {
-                cmd.entity(entity).insert(OutsideFrustum);
+                // cmd.entity(entity).insert(OutsideFrustum);
+                visibility.is_visible = false;
             }
         }
 
         if key_input.just_pressed(KeyCode::G) {
             trace!("pressed G");
-            for (entity, _, blocking) in query.iter_mut() {
+            for (entity, mut visibility, blocking) in query.iter_mut() {
                 if let BlockingType::Wall = blocking.blocking_type {
-                    cmd.entity(entity).insert(OutsideFrustum);
+                    // cmd.entity(entity).insert(OutsideFrustum);
+                    visibility.is_visible = true;
                 }
             }
         };

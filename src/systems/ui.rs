@@ -162,9 +162,7 @@ pub fn ui(
     let window = windows.get_primary().unwrap();
     let height = window.height();
 
-    let (health, agility, endurance, intelligence, strength, level, name, race) = player_query
-        .single()
-        .expect("failed to get player related data for UI");
+    let (hp, agi, end, int, str, level, name, race) = player_query.single();
 
     egui::TopBottomPanel::bottom("text panel")
         .resizable(false)
@@ -216,7 +214,7 @@ pub fn ui(
 
                 ui.horizontal(|ui| {
                     ui.label("Health: ");
-                    ui.label(health.to_ui_format());
+                    ui.label(hp.to_ui_format());
                 });
 
                 ui.separator();
@@ -224,16 +222,16 @@ pub fn ui(
                 ui.vertical(|ui| {
                     ui.horizontal(|ui| {
                         ui.label("Strength: ");
-                        ui.label(strength.inner().to_string());
+                        ui.label(str.inner().to_string());
                         ui.label("Agility: ");
-                        ui.label(agility.inner().to_string());
+                        ui.label(agi.inner().to_string());
                     });
 
                     ui.horizontal(|ui| {
                         ui.label("Endurance: ");
-                        ui.label(endurance.inner().to_string());
+                        ui.label(end.inner().to_string());
                         ui.label("Intelligence: ");
-                        ui.label(intelligence.inner().to_string());
+                        ui.label(int.inner().to_string());
                     });
                 });
             })

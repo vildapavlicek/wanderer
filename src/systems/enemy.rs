@@ -33,7 +33,7 @@ pub fn enemy_turn(
     debug!("running enemy turn");
     let mut to_move: Vec<NPCActionType> = vec![];
 
-    let (player_entity, player_pos) = player.single().expect("no player entity");
+    let (player_entity, player_pos) = player.single();
 
     for (Actor(actor), mut action_state) in actors.iter_mut() {
         trace!(?actor, "got actor");
@@ -174,7 +174,7 @@ pub fn enemy_move(
                 position.translation = Vec3::new(x, y, position.translation.z);
             }
             NPCActionType::Attack(_target, name) => {
-                let (_entity, mut hp) = targets.single_mut().expect("no player entity");
+                let (_entity, mut hp) = targets.single_mut();
                 hp.current -= 1;
                 log_writer.send(LogEvent::npc_attacks_player(name, 1));
                 info!(msg = "attacked player", ?hp)

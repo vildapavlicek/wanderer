@@ -7,14 +7,14 @@ pub enum GameState {
     RangedTargeting,
 }
 pub struct Materials {
-    pub cave_spider: Handle<ColorMaterial>,
-    pub player_material: Handle<ColorMaterial>,
-    pub player24x24_material: Handle<ColorMaterial>,
-    pub obstacle_material: Handle<ColorMaterial>,
-    pub enemy_material: Handle<ColorMaterial>,
-    pub floor_material: Handle<ColorMaterial>,
+    pub cave_spider: Handle<Image>,
+    pub player_material: Handle<Image>,
+    pub player24x24_material: Handle<Image>,
+    pub obstacle_material: Handle<Image>,
+    pub enemy_material: Handle<Image>,
+    pub floor_material: Handle<Image>,
     pub flamey_sprite_sheet: Handle<TextureAtlas>,
-    pub cave_wall: Handle<ColorMaterial>,
+    pub cave_wall: Handle<Image>,
     pub cave_wall_sprite_sheet: Handle<TextureAtlas>,
-    pub mole: Handle<ColorMaterial>,
+    pub mole: Handle<Image>,
 }
