@@ -128,6 +128,7 @@ pub fn player_move_or_attack(
     In(event): In<Option<PlayerActionEvent>>,
     mut game_state: ResMut<State<GameState>>,
     mut player_camera_pos: QuerySet<(
+        //TODO: simplify to Query<&mut Transform, Or<(With<Player>, With<PlayerCamera>)>
         QueryState<&mut Transform, With<Player>>,
         QueryState<&mut Transform, With<PlayerCamera>>,
     )>,
