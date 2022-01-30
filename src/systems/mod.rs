@@ -102,22 +102,22 @@ pub fn cheats(
     mut query: Query<(Entity, &mut Visibility, &Blocking)>,
 ) {
     if key_input.just_pressed(KeyCode::H) {
-        trace!("pressed H");
+        info!("pressed H");
         for (entity, mut visibility, blocking) in query.iter_mut() {
             if let BlockingType::Wall = blocking.blocking_type {
                 // cmd.entity(entity).insert(OutsideFrustum);
                 visibility.is_visible = false;
             }
         }
-
-        if key_input.just_pressed(KeyCode::G) {
-            trace!("pressed G");
-            for (entity, mut visibility, blocking) in query.iter_mut() {
-                if let BlockingType::Wall = blocking.blocking_type {
-                    // cmd.entity(entity).insert(OutsideFrustum);
-                    visibility.is_visible = true;
-                }
-            }
-        };
     }
+
+    if key_input.just_pressed(KeyCode::G) {
+        info!("pressed G");
+        for (entity, mut visibility, blocking) in query.iter_mut() {
+            if let BlockingType::Wall = blocking.blocking_type {
+                // cmd.entity(entity).insert(OutsideFrustum);
+                visibility.is_visible = true;
+            }
+        }
+    };
 }

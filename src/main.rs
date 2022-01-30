@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"] // disables console window, disable in VSCode, otherwise there is no output in console
+// #![windows_subsystem = "windows"] // disables console window, disable in VSCode, otherwise there is no output in console
 #![allow(clippy::float_cmp)]
 #![allow(clippy::type_complexity)]
 #![allow(unused)]
