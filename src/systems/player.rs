@@ -5,7 +5,10 @@ use crate::{
         Blocking, Enemy, Health,
     },
     resources::{GameState, Materials},
-    systems::PlayerSystems,
+    systems::{
+        movement::{MoveDirection, Movement},
+        PlayerSystems,
+    },
 };
 use bevy::prelude::*;
 use std::default::Default;
@@ -45,44 +48,35 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
 #[derive(Debug)]
 enum PlayerAction {
     NoAction,
-    Movement(f32, f32),
+    Movement(MoveDirection),
     RangedTargeting,
     SkipTurn,
 }
 
 pub enum PlayerActionEvent {
-    Move(f32, f32),
+    Movement,
     Attack(Entity),
 }
 
 pub fn handle_key_input(
+    mut cmd: Commands,
     mut game_state: ResMut<State<GameState>>,
     mut key_input: ResMut<Input<KeyCode>>,
-    player_position: Query<&Transform, With<Player>>,
+    player_position: Query<(Entity, &Transform), With<Player>>,
+    camera: Query<Entity, With<PlayerCamera>>,
     blocker_position: Query<(Entity, &Transform, &Blocking)>,
 ) -> Option<PlayerActionEvent> {
-    let player_position = player_position.single();
+    let (p_id, player_position) = player_position.single();
+    let camera = camera.single();
 
     let action = if key_input.just_pressed(KeyCode::Left) {
-        PlayerAction::Movement(
-            player_position.translation.x - super::MOVE_SIZE,
-            player_position.translation.y,
-        )
+        PlayerAction::Movement(MoveDirection::Left)
     } else if key_input.just_pressed(KeyCode::Up) {
-        PlayerAction::Movement(
-            player_position.translation.x,
-            player_position.translation.y + super::MOVE_SIZE,
-        )
+        PlayerAction::Movement(MoveDirection::Up)
     } else if key_input.just_pressed(KeyCode::Right) {
-        PlayerAction::Movement(
-            player_position.translation.x + super::MOVE_SIZE,
-            player_position.translation.y,
-        )
+        PlayerAction::Movement(MoveDirection::Right)
     } else if key_input.just_pressed(KeyCode::Down) {
-        PlayerAction::Movement(
-            player_position.translation.x,
-            player_position.translation.y - super::MOVE_SIZE,
-        )
+        PlayerAction::Movement(MoveDirection::Down)
     } else if key_input.just_pressed(KeyCode::T) {
         PlayerAction::RangedTargeting
     } else if key_input.just_pressed(KeyCode::S) {
@@ -95,15 +89,20 @@ pub fn handle_key_input(
     key_input.clear();
 
     match action {
-        PlayerAction::Movement(x, y) => {
+        PlayerAction::Movement(direction) => {
+            let ppos = direction.get_new_translation(player_position, None);
             match blocker_position.iter().find(|(_, blocker_pos, _)| {
-                (blocker_pos.translation.x == x) && (blocker_pos.translation.y == y)
+                (blocker_pos.translation.x == ppos.x) && (blocker_pos.translation.y == ppos.y)
             }) {
                 Some((entity, _, blocking)) if blocking.is_attackable() => {
                     Some(PlayerActionEvent::Attack(entity))
                 }
                 Some(_) => None,
-                None => Some(PlayerActionEvent::Move(x, y)), // player_action_writer.send(PlayerActionEvent::Move(x, y)),
+                None => {
+                    cmd.entity(p_id).insert(Movement::new(direction, p_id));
+                    cmd.entity(camera).insert(Movement::new(direction, camera));
+                    Some(PlayerActionEvent::Movement)
+                }
             }
         }
         PlayerAction::RangedTargeting => {
@@ -132,11 +131,7 @@ pub fn player_move_or_attack(
     mut log_writer: EventWriter<LogEvent>,
 ) {
     match event {
-        Some(PlayerActionEvent::Move(x, y)) => {
-            cameras
-                .iter_mut()
-                .for_each(|mut t| t.translation = Vec3::new(x, y, t.translation.z));
-
+        Some(PlayerActionEvent::Movement) => {
             game_state
                 .set(GameState::EnemyTurn)
                 .expect("failed to set game state to enemy turn after player movement");

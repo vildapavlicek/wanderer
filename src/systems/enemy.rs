@@ -1,14 +1,10 @@
+use super::movement::{MoveDirection, Movement};
 use crate::ai::actions::Move;
 use crate::components::{player::Player, Blocking, Enemy, Health};
 use crate::resources::GameState;
 use bevy::prelude::*;
 use big_brain::actions::ActionState;
 use big_brain::prelude::Actor;
-
-pub enum MoveDirection {
-    Left,
-    Right,
-}
 
 #[derive(Debug)]
 pub enum NPCActionType {

@@ -2,6 +2,7 @@ pub mod enemy;
 pub mod player;
 pub mod ranged;
 pub mod ui;
+pub mod movement;
 
 use crate::components::player::{Player, PlayerCamera};
 use bevy::prelude::*;
@@ -118,4 +119,3 @@ pub fn cheats(
         }
     };
 }
-
