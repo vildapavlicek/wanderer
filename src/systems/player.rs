@@ -127,27 +127,15 @@ use crate::systems::ui::LogEvent;
 pub fn player_move_or_attack(
     In(event): In<Option<PlayerActionEvent>>,
     mut game_state: ResMut<State<GameState>>,
-    mut player_camera_pos: QuerySet<(
-        //TODO: simplify to Query<&mut Transform, Or<(With<Player>, With<PlayerCamera>)>
-        QueryState<&mut Transform, With<Player>>,
-        QueryState<&mut Transform, With<PlayerCamera>>,
-    )>,
+    mut cameras: Query<&mut Transform, Or<(With<Player>, With<PlayerCamera>)>>,
     mut enemies: Query<(Entity, &mut Health, &crate::components::ItemName), With<Enemy>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
     match event {
         Some(PlayerActionEvent::Move(x, y)) => {
-            {
-                let mut p_query = player_camera_pos.q0();
-                let mut ppos = p_query.single_mut();
-                ppos.translation = Vec3::new(x, y, ppos.translation.z);
-            }
-
-            {
-                let mut p_query = player_camera_pos.q1();
-                let mut ppos = p_query.single_mut();
-                ppos.translation = Vec3::new(x, y, ppos.translation.z);
-            }
+            cameras
+                .iter_mut()
+                .for_each(|mut t| t.translation = Vec3::new(x, y, t.translation.z));
 
             game_state
                 .set(GameState::EnemyTurn)
