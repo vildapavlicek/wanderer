@@ -45,7 +45,6 @@ pub fn setup(
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     let cave_wall_handle = asset_server.get_handle("sprites/cave_wall3_darker.png");
-    // let cave_wall_handle = asset_server.get_handle("sprites/cave_wall_4_brown.png");
     let cave_wall_texture_atlas =
         TextureAtlas::from_grid(cave_wall_handle, Vec2::new(32., 32.), 6, 3);
     let cave_wall_texture_atlas_handle = texture_atlases.add(cave_wall_texture_atlas);
@@ -61,7 +60,7 @@ pub fn setup(
     commands.insert_resource(super::resources::Materials {
         cave_spider,
         player_material: player_texture,
-        obstacle_material: wall_texture, //materials.add(Color::rgb(1., 1., 1.).into()),
+        obstacle_material: wall_texture,
         enemy_material: enemy_texture,
         floor_material: floor_texture,
         player24x24_material: player_texture_24x24,
@@ -105,7 +104,6 @@ pub fn cheats(
         info!("pressed H");
         for (entity, mut visibility, blocking) in query.iter_mut() {
             if let BlockingType::Wall = blocking.blocking_type {
-                // cmd.entity(entity).insert(OutsideFrustum);
                 visibility.is_visible = false;
             }
         }
@@ -115,9 +113,9 @@ pub fn cheats(
         info!("pressed G");
         for (entity, mut visibility, blocking) in query.iter_mut() {
             if let BlockingType::Wall = blocking.blocking_type {
-                // cmd.entity(entity).insert(OutsideFrustum);
                 visibility.is_visible = true;
             }
         }
     };
 }
+

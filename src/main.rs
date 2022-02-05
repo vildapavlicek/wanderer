@@ -32,15 +32,12 @@ fn main() {
         .add_plugin(ranged::RangedPlugin)
         .add_plugin(EguiPlugin)
         .add_plugin(BigBrainPlugin)
-        .add_startup_system(systems::setup.system())
-        .add_startup_system(update_logging.system())
-        .add_startup_stage(
-            "generate_map",
-            SystemStage::single(map::generate_map.system()), // systems::grid::generate_map.system()
-        )
+        .add_startup_system(systems::setup)
+        .add_startup_system(update_logging)
+        .add_startup_stage("generate_map", SystemStage::single(map::generate_map))
         .add_system_set(
             SystemSet::on_update(GameState::EnemyTurn)
-                .with_system(ai::scorers::player_in_range_scorer_system.system())
+                .with_system(ai::scorers::player_in_range_scorer_system)
                 .label("npc_scorer"),
         )
         .add_system_set(
@@ -48,15 +45,15 @@ fn main() {
                 .with_system(
                     systems::enemy::enemy_turn
                         .system()
-                        .chain(systems::enemy::enemy_move.system()),
+                        .chain(systems::enemy::enemy_move),
                 )
                 .after("npc_scorer"),
         )
-        .add_system(systems::animation.system())
-        .add_system(systems::ui::update_logs.system())
-        .add_system(systems::ui::ui.system())
-        .add_system(systems::clear_dead.system())
-        .add_system(systems::cheats.system())
+        .add_system(systems::animation)
+        .add_system(systems::ui::update_logs)
+        .add_system(systems::ui::ui)
+        .add_system(systems::clear_dead)
+        .add_system(systems::cheats)
         .run();
 }
 
