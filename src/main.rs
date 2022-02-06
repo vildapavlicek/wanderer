@@ -47,9 +47,9 @@ fn main() {
                         .system()
                         .chain(systems::enemy::enemy_move),
                 )
+                .label(systems::SystemLabel::EnemyTurn)
                 .after("npc_scorer"),
         )
-        .add_system(systems::movement::process_movement)
         .add_system(systems::animation)
         .add_system(systems::ui::update_logs)
         .add_system(systems::ui::ui)

@@ -7,7 +7,7 @@ use crate::{
     resources::{GameState, Materials},
     systems::{
         movement::{MoveDirection, Movement},
-        PlayerSystems,
+        SystemLabel,
     },
 };
 use bevy::prelude::*;
@@ -22,8 +22,7 @@ impl Plugin for PlayerPlugins {
                 SystemSet::on_update(GameState::PlayerTurn).with_system(
                     handle_key_input
                         .system()
-                        .chain(player_move_or_attack.system())
-                        .label(PlayerSystems::HandleInput),
+                        .chain(player_move_or_attack.system()),
                 ),
             )
             .add_event::<PlayerActionEvent>();
@@ -54,7 +53,7 @@ enum PlayerAction {
 }
 
 pub enum PlayerActionEvent {
-    Movement,
+    Movement(MoveDirection),
     Attack(Entity),
 }
 
@@ -98,11 +97,7 @@ pub fn handle_key_input(
                     Some(PlayerActionEvent::Attack(entity))
                 }
                 Some(_) => None,
-                None => {
-                    cmd.entity(p_id).insert(Movement::new(direction, p_id));
-                    cmd.entity(camera).insert(Movement::new(direction, camera));
-                    Some(PlayerActionEvent::Movement)
-                }
+                None => Some(PlayerActionEvent::Movement(direction)),
             }
         }
         PlayerAction::RangedTargeting => {
@@ -126,12 +121,14 @@ use crate::systems::ui::LogEvent;
 pub fn player_move_or_attack(
     In(event): In<Option<PlayerActionEvent>>,
     mut game_state: ResMut<State<GameState>>,
-    mut cameras: Query<&mut Transform, Or<(With<Player>, With<PlayerCamera>)>>,
+    mut pos: Query<&mut Transform, Or<(With<Player>, With<PlayerCamera>)>>,
     mut enemies: Query<(Entity, &mut Health, &crate::components::ItemName), With<Enemy>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
     match event {
-        Some(PlayerActionEvent::Movement) => {
+        Some(PlayerActionEvent::Movement(direction)) => {
+            pos.iter_mut()
+                .for_each(|mut t| direction.r#move(t.into_inner(), None));
             game_state
                 .set(GameState::EnemyTurn)
                 .expect("failed to set game state to enemy turn after player movement");

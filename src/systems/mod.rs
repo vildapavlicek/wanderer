@@ -1,8 +1,8 @@
 pub mod enemy;
+pub mod movement;
 pub mod player;
 pub mod ranged;
 pub mod ui;
-pub mod movement;
 
 use crate::components::player::{Player, PlayerCamera};
 use bevy::prelude::*;
@@ -18,9 +18,9 @@ const PLAYER_LAYER: f32 = 3.;
 const MOVE_SIZE: f32 = 32.;
 
 #[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
-pub enum PlayerSystems {
-    HandleInput,
-    PlayerMovement,
+pub enum SystemLabel {
+    PlayerTurn,
+    EnemyTurn,
 }
 
 pub fn setup(
