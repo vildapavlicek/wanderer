@@ -7,6 +7,7 @@ mod components;
 mod map;
 mod resources;
 mod systems;
+mod utils;
 
 use crate::resources::GameState;
 use crate::systems::{player, ranged};
