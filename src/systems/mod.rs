@@ -51,7 +51,7 @@ pub fn setup(
 
     // todo: this is only place holder
     let face_handle = asset_server.load("placeholders/face.png");
-    egui_context.set_egui_texture(1, face_handle);
+    egui_context.add_image(face_handle);
 
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
@@ -74,12 +74,16 @@ pub fn setup(
 pub fn animation(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
+    mut query: Query<(
+        &mut crate::components::Timer,
+        &mut TextureAtlasSprite,
+        &Handle<TextureAtlas>,
+    )>,
 ) {
     for (mut timer, mut sprite, texture_atlas_handle) in query.iter_mut() {
-        timer.tick(time.delta());
+        timer.0.tick(time.delta());
 
-        if timer.finished() {
+        if timer.0.finished() {
             let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
             sprite.index = ((sprite.index as usize + 1) % texture_atlas.textures.len());
         }
@@ -118,4 +122,3 @@ pub fn cheats(
         }
     };
 }
-

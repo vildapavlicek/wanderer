@@ -18,8 +18,7 @@ impl Plugin for PlayerPlugins {
             .add_system_set(
                 SystemSet::on_update(GameState::PlayerTurn).with_system(
                     handle_key_input
-                        .system()
-                        .chain(player_move_or_attack.system())
+                        .chain(player_move_or_attack)
                         .label(PlayerSystems::HandleInput),
                 ),
             )

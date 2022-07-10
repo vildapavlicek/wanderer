@@ -76,7 +76,7 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                     ..Default::default()
                 })
                 .insert(Blocking::wall())
-                .insert(Timer::from_seconds(r, true));
+                .insert(crate::components::Timer(Timer::from_seconds(r, true)));
 
                 // cmd.spawn_bundle(SpriteBundle {
                 //     material: materials.cave_wall.clone(),
@@ -421,7 +421,7 @@ mod monster_spawner {
                             ),
                             ..Default::default()
                         })
-                        .insert(Timer::from_seconds(0.1, true))
+                        .insert(crate::components::Timer(Timer::from_seconds(0.1, true)))
                         .insert_bundle(crate::components::npc::MeleeEnemy::new(
                             "Flamey".into(),
                             5,
