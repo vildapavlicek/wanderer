@@ -142,7 +142,7 @@ impl EventTarget {
 }
 
 pub fn ui(
-    egui_ctx: Res<EguiContext>,
+    mut egui_ctx: ResMut<EguiContext>,
     logs: Res<LogMessages>,
     windows: Res<Windows>,
     player_query: Query<
@@ -166,7 +166,7 @@ pub fn ui(
 
     egui::TopBottomPanel::bottom("text panel")
         .resizable(false)
-        .show(egui_ctx.ctx(), |ui| {
+        .show(egui_ctx.ctx_mut(), |ui| {
             ui.allocate_exact_size(egui::Vec2::new(250., 100.), egui::Sense::hover());
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
@@ -185,7 +185,7 @@ pub fn ui(
     egui::SidePanel::left("side_panel")
         .default_width(window.width() * 0.25)
         .resizable(false)
-        .show(egui_ctx.ctx(), |ui| {
+        .show(egui_ctx.ctx_mut(), |ui| {
             ui.heading("Player info");
 
             ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {

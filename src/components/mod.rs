@@ -5,6 +5,9 @@ use bevy::prelude::{Bundle, Component};
 use std::fmt::Formatter;
 use std::ops::Add;
 
+#[derive(Debug, Component)]
+pub struct Timer(pub bevy::prelude::Timer);
+
 /// This represents name of the thing, NPC or anything that needs to be named
 #[derive(Debug, Component)]
 pub struct ItemName(pub String);

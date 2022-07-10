@@ -42,11 +42,7 @@ fn main() {
         )
         .add_system_set(
             SystemSet::on_update(GameState::EnemyTurn)
-                .with_system(
-                    systems::enemy::enemy_turn
-                        .system()
-                        .chain(systems::enemy::enemy_move),
-                )
+                .with_system(systems::enemy::enemy_turn.chain(systems::enemy::enemy_move))
                 .after("npc_scorer"),
         )
         .add_system(systems::animation)
