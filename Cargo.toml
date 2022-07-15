@@ -13,3 +13,4 @@ bevy_egui = "0.14.0"
 chrono = "0.4.19"
 num-integer = "0.1.44"
 big-brain = "0.11.0"
+bevy_rapier2d = { version = "0.15.0", features = ["debug-render"]}

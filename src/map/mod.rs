@@ -1,4 +1,4 @@
-use crate::components::{Blocking, ItemName};
+/* //use crate::components::{Blocking, ItemName};
 use crate::resources::Materials;
 use bevy::prelude::*;
 use bevy::utils::HashSet;
@@ -75,7 +75,7 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                     ),
                     ..Default::default()
                 })
-                .insert(Blocking::wall())
+                //.insert(Blocking::wall())
                 .insert(crate::components::Timer(Timer::from_seconds(r, true)));
 
                 // cmd.spawn_bundle(SpriteBundle {
@@ -100,6 +100,7 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                     transform: Transform::from_xyz(to_coords(pos.x), to_coords(pos.y), FLOOR_LAYER),
                     ..Default::default()
                 });
+                //.insert(Blocking::none());
             }
         }
     }
@@ -324,7 +325,7 @@ fn test_hash_eq() {
 
 mod monster_spawner {
     use super::*;
-    use crate::components::npc::MonsterStrength;
+    //use crate::components::npc::MonsterStrength;
     use big_brain::pickers::FirstToScore;
     use big_brain::prelude::Thinker;
 
@@ -600,3 +601,4 @@ mod monster_spawner {
         assert_eq!(m3_hash, m4_hash, "third test failed")
     }
 }
+ */

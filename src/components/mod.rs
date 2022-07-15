@@ -1,4 +1,4 @@
-pub mod npc;
+/* pub mod npc;  */
 pub mod player;
 
 use bevy::prelude::{Bundle, Component};
@@ -8,7 +8,7 @@ use std::ops::Add;
 #[derive(Debug, Component)]
 pub struct Timer(pub bevy::prelude::Timer);
 
-/// This represents name of the thing, NPC or anything that needs to be named
+/* /// This represents name of the thing, NPC or anything that needs to be named
 #[derive(Debug, Component)]
 pub struct ItemName(pub String);
 impl std::fmt::Display for ItemName {
@@ -33,8 +33,7 @@ impl std::default::Default for State {
     }
 }
 
-/// This is component that marks that it will block your path
-/// To make it easier it has type of blocking. If you are blocked by enemy (you'd bump into them) it should be instead considered as attack
+/// Wrapper component so we can easily resolve if given entity blocks, is attackable or we can pass
 #[derive(Debug, Component)]
 pub struct Blocking {
     pub blocking_type: BlockingType,
@@ -65,17 +64,29 @@ impl Blocking {
         }
     }
 
+    pub fn none() -> Self {
+        Self {
+            blocking_type: BlockingType::None,
+        }
+    }
+
     pub fn is_attackable(&self) -> bool {
         matches!(self.blocking_type, BlockingType::Enemy)
     }
+
+    pub fn doesnt_block(&self) -> bool {
+        matches!(self.blocking_type, BlockingType::None)
+    }
 }
 
-#[derive(Debug, Component)]
+#[derive(Debug)]
 pub enum BlockingType {
     Wall,
     Obstacle,
     Enemy,
     Player,
+    // Some kind of entity, that is spawned and doesn't block, like item, floor etc.
+    None,
 }
 
 /// Component that stores max possible health as well as tracks the current health
@@ -322,3 +333,4 @@ pub struct Armor {
     kind: ArmorType,
     defense: usize,
 }
+ */

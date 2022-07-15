@@ -1,12 +1,14 @@
-pub mod enemy;
 pub mod player;
+pub mod sandbox;
+/* pub mod enemy;
+
 pub mod ranged;
 pub mod ui;
 
-use crate::components::player::{Player, PlayerCamera};
-use bevy::prelude::*;
+
 
 use bevy_egui::EguiContext;
+*/
 
 const SPRITE_SIZE: f32 = 32.;
 const FLOOR_LAYER: f32 = 0.;
@@ -15,19 +17,22 @@ const MONSTER_LAYER: f32 = 2.;
 const PLAYER_LAYER: f32 = 3.;
 
 const MOVE_SIZE: f32 = 32.;
-
+/*
 #[derive(SystemLabel, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum PlayerSystems {
     HandleInput,
     PlayerMovement,
 }
+*/
+
+use bevy::prelude::*;
 
 pub fn setup(
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    mut egui_context: ResMut<EguiContext>,
+    // mut egui_context: ResMut<EguiContext>,
 ) {
     asset_server.load_folder("images").unwrap();
     let wall_texture = asset_server.get_handle("images/wall.png");
@@ -50,12 +55,8 @@ pub fn setup(
     let cave_wall_texture_atlas_handle = texture_atlases.add(cave_wall_texture_atlas);
 
     // todo: this is only place holder
-    let face_handle = asset_server.load("placeholders/face.png");
-    egui_context.add_image(face_handle);
-
-    commands
-        .spawn_bundle(OrthographicCameraBundle::new_2d())
-        .insert(PlayerCamera);
+    /* let face_handle = asset_server.load("placeholders/face.png");
+    egui_context.add_image(face_handle); */
 
     commands.insert_resource(super::resources::Materials {
         cave_spider,
@@ -70,7 +71,7 @@ pub fn setup(
         mole,
     });
 }
-
+/*
 pub fn animation(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
@@ -90,16 +91,16 @@ pub fn animation(
     }
 }
 
-use crate::components::{Blocking, BlockingType, Health, ItemName};
+/* use crate::components::{Blocking, BlockingType, Health, ItemName};
 pub fn clear_dead(mut command: Commands, bodies: Query<(Entity, &Health), Without<Player>>) {
     for (entity, hp) in bodies.iter() {
         if hp.current < 0 {
             command.entity(entity).despawn();
         }
     }
-}
+} */
 
-pub fn cheats(
+/* pub fn cheats(
     mut cmd: Commands,
     mut key_input: ResMut<Input<KeyCode>>,
     mut query: Query<(Entity, &mut Visibility, &Blocking)>,
@@ -121,4 +122,5 @@ pub fn cheats(
             }
         }
     };
-}
+} */
+ */

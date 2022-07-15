@@ -1,4 +1,4 @@
-use bevy::prelude::ResMut;
+/* use bevy::prelude::ResMut;
 use bevy::{
     ecs::prelude::{Query, Res, With},
     prelude::Windows,
@@ -243,3 +243,4 @@ pub fn update_logs(mut events: bevy::prelude::EventReader<LogEvent>, mut log: Re
         log.add_message(event.clone());
     }
 }
+ */
