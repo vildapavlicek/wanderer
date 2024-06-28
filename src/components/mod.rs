@@ -82,7 +82,8 @@ pub enum BlockingType {
 #[derive(Debug, Component)]
 pub struct Health {
     pub current: i32,
-    max: i32,
+    pub max: i32,
+    pub min: i32,
 }
 
 impl Health {
@@ -92,8 +93,12 @@ impl Health {
 }
 
 impl Health {
-    pub fn new(max: i32) -> Self {
-        Health { current: max, max }
+    pub fn new(max: i32, min: i32) -> Self {
+        Health {
+            current: max,
+            max,
+            min,
+        }
     }
 }
 
@@ -322,3 +327,6 @@ pub struct Armor {
     kind: ArmorType,
     defense: usize,
 }
+
+#[derive(Debug, Component)]
+pub struct Dead;

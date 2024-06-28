@@ -34,7 +34,7 @@ impl MeleeEnemy {
     ) -> Self {
         MeleeEnemy {
             name: super::ItemName(name),
-            health: super::Health::new(max_health as i32),
+            health: super::Health::new(max_health as i32, 0),
             race,
             level: super::Level(level as i32),
             monster_strength: MonsterStrength::random(),

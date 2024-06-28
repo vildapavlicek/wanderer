@@ -8,44 +8,36 @@ use big_brain::prelude::Actor;
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EnemyTurnSet;
 
-pub enum MoveDirection {
-    Left,
-    Right,
-}
-
 #[derive(Debug)]
 pub enum NPCActionType {
     Move {
-        entity: Entity,
+        actor: Entity,
         x: f32,
         y: f32,
     },
     /// Attack Action and attacker's details (EntityId, Name)
-    Attack(Entity, String),
+    Attack {
+        target: Entity,
+        attacker_name: String,
+    },
 }
 
-use crate::ai::scorers::PlayerInRange;
-use crate::components::ItemName;
+use crate::components::{Dead, ItemName};
 
 pub fn enemy_turn(
     player: Query<(Entity, &Transform), With<Player>>,
-    enemies: Query<(Entity, &Transform, &ItemName), With<Enemy>>,
+    enemies: Query<(Entity, &Transform, &ItemName), (With<Enemy>, Without<Dead>)>,
     mut actors: Query<(&Actor, &mut ActionState), With<Move>>,
-    blockers: Query<(&Transform, &Blocking)>,
+    blockers: Query<(&Transform, &Blocking), Without<Player>>,
 ) -> Vec<NPCActionType> {
-    debug!("running enemy turn");
     let mut to_move: Vec<NPCActionType> = vec![];
 
     let (player_entity, player_pos) = player.single();
 
     for (Actor(actor), mut action_state) in actors.iter_mut() {
-        trace!(?actor, "got actor");
         if let Ok((entity, npc_transform, name)) = enemies.get(*actor) {
-            trace!(?entity, "got mover");
             match *action_state {
                 big_brain::actions::ActionState::Requested => {
-                    trace!("requested action to move!");
-
                     let mut possible_blockers = blockers
                         .iter()
                         .filter_map(|(b_trans, _)| {
@@ -69,7 +61,12 @@ pub fn enemy_turn(
                         &mut to_move
                             .iter()
                             .filter_map(|action| {
-                                if let NPCActionType::Move { entity, x, y } = action {
+                                if let NPCActionType::Move {
+                                    actor: entity,
+                                    x,
+                                    y,
+                                } = action
+                                {
                                     Some(Transform::from_xyz(*x, *y, super::MONSTER_LAYER))
                                 } else {
                                     None
@@ -78,15 +75,29 @@ pub fn enemy_turn(
                             .collect::<Vec<Transform>>(),
                     );
 
-                    if let Some(future_pos) =
+                    let Some(future_pos) =
                         resolve_position(npc_transform, player_pos, possible_blockers)
-                    {
-                        to_move.push(NPCActionType::Move {
-                            entity,
-                            x: future_pos.x,
-                            y: future_pos.y,
-                        });
+                    else {
+                        *action_state = big_brain::actions::ActionState::Success;
+                        continue;
                     };
+
+                    if future_pos.truncate() == player_pos.translation.truncate() {
+                        to_move.push(NPCActionType::Attack {
+                            target: player_entity,
+                            attacker_name: name.to_string(),
+                        });
+
+                        *action_state = big_brain::actions::ActionState::Success;
+                        continue;
+                    }
+
+                    to_move.push(NPCActionType::Move {
+                        actor: entity,
+                        x: future_pos.x,
+                        y: future_pos.y,
+                    });
+
                     *action_state = big_brain::actions::ActionState::Success;
                 }
                 _ => debug!(action_state = format!("{:?}", *action_state).as_str()),
@@ -162,13 +173,17 @@ use crate::systems::ui::LogEvent;
 pub fn enemy_move(
     In(to_move): In<Vec<NPCActionType>>,
     mut q: Query<&mut Transform>,
-    mut targets: Query<(Entity, &mut Health), With<Player>>,
+    mut targets: Query<(Entity, &mut Health)>,
     mut game_state: ResMut<NextState<GameState>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
     for action_type in to_move.into_iter() {
         match action_type {
-            NPCActionType::Move { entity, x, y } => {
+            NPCActionType::Move {
+                actor: entity,
+                x,
+                y,
+            } => {
                 trace!(?entity, ?x, ?y, "moving NPC");
                 let mut position = q
                     .get_mut(entity)
@@ -176,11 +191,19 @@ pub fn enemy_move(
 
                 position.translation = Vec3::new(x, y, position.translation.z);
             }
-            NPCActionType::Attack(_target, name) => {
-                let (_entity, mut hp) = targets.single_mut();
-                hp.current -= 1;
-                log_writer.send(LogEvent::npc_attacks_player(name, 1));
-                info!(msg = "attacked player", ?hp)
+            NPCActionType::Attack {
+                target,
+                attacker_name,
+            } => {
+                dbg!("NPC attacking target!");
+                match targets.get_mut(target) {
+                    Ok((_, mut hp)) => {
+                        hp.current -= 1;
+                        log_writer.send(LogEvent::npc_attacks_player(attacker_name, 1));
+                        info!(msg = "attacked player", ?hp)
+                    }
+                    Err(_) => error!("trying to attack non-existing entity"),
+                };
             }
         }
     }

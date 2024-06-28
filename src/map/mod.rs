@@ -448,7 +448,7 @@ mod monster_spawner {
                         )))
                         .insert(crate::components::npc::MeleeEnemy::new(
                             "Flamey".into(),
-                            5,
+                            1,
                             crate::components::Race::Elemental,
                             1,
                             crate::components::Stats::new(1, 1, 1, 1),
@@ -478,7 +478,7 @@ mod monster_spawner {
                         })
                         .insert(crate::components::npc::MeleeEnemy::new(
                             "Cave MOLE".into(),
-                            5,
+                            1,
                             crate::components::Race::Unknown,
                             1,
                             crate::components::Stats::new(1, 1, 1, 1),
@@ -508,7 +508,7 @@ mod monster_spawner {
                         })
                         .insert(crate::components::npc::MeleeEnemy::new(
                             "Cave Spider".into(),
-                            5,
+                            1,
                             crate::components::Race::Unknown,
                             1,
                             crate::components::Stats::new(1, 1, 1, 1),

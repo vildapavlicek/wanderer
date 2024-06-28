@@ -24,6 +24,7 @@ impl Plugin for PlayerPlugins {
             Startup,
             spawn_player.run_if(run_once()).in_set(PlayerSetupSet),
         )
+        .add_systems(OnEnter(GameState::PlayerTurn), check_player_health)
         .add_systems(
             Update,
             (handle_key_input.pipe(player_move_or_attack))
@@ -158,4 +159,16 @@ pub fn player_move_or_attack(
         }
         _ => (),
     };
+}
+
+pub fn check_player_health(
+    query: Query<&Health, With<Player>>,
+    mut state: ResMut<NextState<GameState>>,
+) {
+    let health = query.single();
+
+    if health.current <= health.min {
+        state.set(GameState::PlayerDead);
+        warn!("player died!!!!!!");
+    }
 }

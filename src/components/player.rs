@@ -39,7 +39,7 @@ impl PlayerBundle {
                 current: 0,
                 max: PLAYER_MAX_HEALTH,
             },
-            health: super::Health::new(max_health),
+            health: super::Health::new(max_health, 0),
             blocking: super::Blocking::player(),
             state: super::State::default(),
             stats: super::Stats::new(10, 5, 8, 3),

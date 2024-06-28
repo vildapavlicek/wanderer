@@ -5,7 +5,10 @@ pub mod ui;
 
 use super::map::SPRITE_SIZE;
 use crate::{
-    components::player::{Player, PlayerCamera},
+    components::{
+        player::{Player, PlayerCamera},
+        Dead,
+    },
     resources::AnimatedSprite,
 };
 use bevy::prelude::*;
@@ -97,13 +100,19 @@ pub fn animation(
     }
 }
 
-use crate::components::{Blocking, BlockingType, Health, ItemName};
-pub fn clear_dead(mut command: Commands, bodies: Query<(Entity, &Health), Without<Player>>) {
-    for (entity, hp) in bodies.iter() {
-        if hp.current < 0 {
-            command.entity(entity).despawn();
+pub fn mark_dead(mut command: Commands, health: Query<(Entity, &Health), Without<Player>>) {
+    for (entity, health) in health.iter() {
+        if health.current <= health.min {
+            command.entity(entity).insert(Dead);
         }
     }
+}
+
+use crate::components::{Blocking, BlockingType, Health, ItemName};
+pub fn clear_dead(mut command: Commands, bodies: Query<Entity, With<Dead>>) {
+    bodies
+        .iter()
+        .for_each(|entity| command.entity(entity).despawn())
 }
 
 pub fn cheats(

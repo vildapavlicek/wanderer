@@ -5,6 +5,7 @@ pub enum GameState {
     PlayerTurn,
     EnemyTurn,
     RangedTargeting,
+    PlayerDead,
 }
 
 #[derive(Debug)]

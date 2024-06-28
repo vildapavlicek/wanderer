@@ -9,13 +9,12 @@ mod systems;
 
 use crate::resources::GameState;
 use crate::systems::{player, ranged};
-use bevy::log::Level;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use big_brain::BigBrainPlugin;
 use map::MapGenSet;
 use systems::enemy::EnemyTurnSet;
-use systems::SetupSet;
+use systems::{mark_dead, SetupSet};
 
 fn main() {
     App::new()
@@ -57,6 +56,7 @@ fn main() {
                 .run_if(in_state(GameState::EnemyTurn))
                 .in_set(EnemyTurnSet),
         )
+        .add_systems(OnExit(GameState::PlayerTurn), mark_dead)
         .configure_sets(Startup, SetupSet.before(MapGenSet))
         .configure_sets(Update, EnemyTurnSet.after(ai::scorers::NpcScorerSet))
         .add_systems(
