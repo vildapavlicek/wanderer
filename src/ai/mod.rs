@@ -23,7 +23,7 @@ pub mod actions {
     //     }
     // }
 
-    #[derive(Debug, Clone, Copy, Component)]
+    #[derive(Debug, Clone, Copy, Component, ActionBuilder)]
     pub struct Move;
 
     impl Move {
@@ -38,6 +38,24 @@ pub mod actions {
     impl ActionBuilder for MoveBuilder {
         fn build(&self, cmd: &mut Commands, action: Entity, _actor: Entity) {
             cmd.entity(action).insert(Move);
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, Component, ActionBuilder)]
+    pub struct Idle;
+
+    impl Idle {
+        pub fn build() -> IdleBuilder {
+            IdleBuilder
+        }
+    }
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct IdleBuilder;
+
+    impl ActionBuilder for IdleBuilder {
+        fn build(&self, cmd: &mut Commands, action: Entity, _actor: Entity) {
+            cmd.entity(action).insert(Idle);
         }
     }
 }

@@ -8,7 +8,7 @@ use big_brain::prelude::*;
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NpcScorerSet;
 
-#[derive(Debug, Copy, Clone, Component)]
+#[derive(Debug, Copy, Clone, Component, ScorerBuilder)]
 pub struct PlayerInRange;
 
 impl PlayerInRange {

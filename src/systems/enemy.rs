@@ -1,9 +1,34 @@
-use crate::ai::actions::Move;
+use crate::ai::actions::{Idle, Move};
 use crate::components::{player::Player, Blocking, Enemy, Health};
+use crate::map::SPRITE_SIZE;
 use crate::resources::GameState;
 use bevy::prelude::*;
 use big_brain::actions::ActionState;
 use big_brain::prelude::Actor;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum RandomMoveDirection {
+    Up,
+    Right,
+    Down,
+    Left,
+}
+
+impl Distribution<RandomMoveDirection> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> RandomMoveDirection {
+        match rng.gen_range(0..=3) {
+            0 => RandomMoveDirection::Up,
+            1 => RandomMoveDirection::Right,
+            2 => RandomMoveDirection::Down,
+            3 => RandomMoveDirection::Left,
+            _ => panic!("reached unexpected value"),
+        }
+    }
+}
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EnemyTurnSet;
@@ -27,7 +52,8 @@ use crate::components::{Dead, ItemName};
 pub fn enemy_turn(
     player: Query<(Entity, &Transform), With<Player>>,
     enemies: Query<(Entity, &Transform, &ItemName), (With<Enemy>, Without<Dead>)>,
-    mut actors: Query<(&Actor, &mut ActionState), With<Move>>,
+    mut actors: Query<(&Actor, &mut ActionState), (With<Move>, Without<Idle>)>,
+    mut idle_actors: Query<(&Actor, &mut ActionState), (With<Idle>, Without<Move>)>,
     blockers: Query<(&Transform, &Blocking), Without<Player>>,
 ) -> Vec<NPCActionType> {
     let mut to_move: Vec<NPCActionType> = vec![];
@@ -103,6 +129,71 @@ pub fn enemy_turn(
                 _ => debug!(action_state = format!("{:?}", *action_state).as_str()),
             }
         }
+    }
+
+    for (Actor(entity), mut action_state) in idle_actors.iter_mut() {
+        let Ok((_, transform, name)) = enemies.get(*entity) else {
+            continue;
+        };
+
+        if !matches!(*action_state, ActionState::Requested) {
+            continue;
+        }
+
+        let mut possible_tries = vec![
+            RandomMoveDirection::Up,
+            RandomMoveDirection::Right,
+            RandomMoveDirection::Down,
+            RandomMoveDirection::Left,
+        ];
+
+        while !possible_tries.is_empty() {
+            debug!(possible_ties = ?&possible_tries);
+            let move_direction: RandomMoveDirection = rand::random();
+            if !possible_tries.contains(&move_direction) {
+                continue;
+            }
+            possible_tries
+                .iter()
+                .position(|v| *v == move_direction)
+                .map(|index| possible_tries.remove(index));
+
+            let new_pos = Vec3::new(
+                ((matches!(move_direction, RandomMoveDirection::Right)) as i8
+                    - (matches!(move_direction, RandomMoveDirection::Left)) as i8)
+                    as f32
+                    * SPRITE_SIZE,
+                ((matches!(move_direction, RandomMoveDirection::Up)) as i8
+                    - (matches!(move_direction, RandomMoveDirection::Down)) as i8)
+                    as f32
+                    * SPRITE_SIZE,
+                0f32,
+            );
+
+            let new_pos = transform.translation + new_pos;
+
+            if blockers
+                .iter()
+                .find(|(transform, _)| transform.translation.trunc() == new_pos.trunc())
+                .is_none()
+                && to_move
+                    .iter()
+                    .find(|action| match action {
+                        NPCActionType::Move { x, y, .. } => new_pos.truncate() == Vec2::new(*x, *y),
+                        _ => false,
+                    })
+                    .is_none()
+            {
+                to_move.push(NPCActionType::Move {
+                    actor: *entity,
+                    x: new_pos.x,
+                    y: new_pos.y,
+                });
+                break;
+            };
+        }
+
+        *action_state = ActionState::Success;
     }
 
     to_move

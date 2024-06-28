@@ -459,7 +459,8 @@ mod monster_spawner {
                                 .when(
                                     crate::ai::scorers::PlayerInRange::build(),
                                     crate::ai::actions::Move::build(),
-                                ),
+                                )
+                                .otherwise(crate::ai::actions::Idle),
                         );
                     }
                     _ if (0.25..0.6).contains(&r) => {
@@ -489,7 +490,8 @@ mod monster_spawner {
                                 .when(
                                     crate::ai::scorers::PlayerInRange::build(),
                                     crate::ai::actions::Move::build(),
-                                ),
+                                )
+                                .otherwise(crate::ai::actions::Idle),
                         );
                     }
                     _ => {
@@ -516,10 +518,8 @@ mod monster_spawner {
                         .insert(
                             Thinker::build()
                                 .picker(FirstToScore { threshold: 0.95 })
-                                .when(
-                                    crate::ai::scorers::PlayerInRange::build(),
-                                    crate::ai::actions::Move::build(),
-                                ),
+                                .when(crate::ai::scorers::PlayerInRange, crate::ai::actions::Move)
+                                .otherwise(crate::ai::actions::Idle),
                         );
                     }
                 }
