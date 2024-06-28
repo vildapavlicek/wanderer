@@ -2,7 +2,9 @@ use crate::ai::actions::{Idle, Move};
 use crate::components::{player::Player, Blocking, Enemy, Health};
 use crate::map::SPRITE_SIZE;
 use crate::resources::GameState;
+use bevy::math::I64Vec2;
 use bevy::prelude::*;
+use bevy::utils::hashbrown::HashSet;
 use big_brain::actions::ActionState;
 use big_brain::prelude::Actor;
 use rand::{
@@ -58,84 +60,58 @@ pub fn enemy_turn(
     let mut to_move: Vec<NPCActionType> = vec![];
 
     let (player_entity, player_pos) = player.single();
+    // create hashset of occupied possitions, ie positions that the enemy cannot move to
+    let mut occupied = HashSet::<I64Vec2>::from_iter(
+        blockers
+            .iter()
+            .map(|(transform, _)| transform.translation.truncate().as_i64vec2()),
+    );
 
     for (Actor(actor), mut action_state) in actors.iter_mut() {
-        if let Ok((entity, npc_transform, name)) = enemies.get(*actor) {
-            match *action_state {
-                big_brain::actions::ActionState::Requested => {
-                    let mut possible_blockers = blockers
-                        .iter()
-                        .filter_map(|(b_trans, _)| {
-                            if npc_transform.translation.x + super::SPRITE_SIZE
-                                == b_trans.translation.x
-                                || npc_transform.translation.x - super::SPRITE_SIZE
-                                    == b_trans.translation.x
-                                || npc_transform.translation.y + super::SPRITE_SIZE
-                                    == b_trans.translation.y
-                                || npc_transform.translation.y - super::SPRITE_SIZE
-                                    == b_trans.translation.y
-                            {
-                                Some(b_trans.to_owned())
-                            } else {
-                                None
-                            }
-                        })
-                        .collect::<Vec<Transform>>();
-
-                    possible_blockers.append(
-                        &mut to_move
-                            .iter()
-                            .filter_map(|action| {
-                                if let NPCActionType::Move {
-                                    actor: entity,
-                                    new_position,
-                                } = action
-                                {
-                                    Some(Transform::from_translation(*new_position))
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect::<Vec<Transform>>(),
-                    );
-
-                    let Some(future_pos) =
-                        resolve_position(npc_transform, player_pos, possible_blockers)
-                    else {
-                        *action_state = big_brain::actions::ActionState::Success;
-                        continue;
-                    };
-
-                    if future_pos.truncate() == player_pos.translation.truncate() {
-                        to_move.push(NPCActionType::Attack {
-                            target: player_entity,
-                            attacker_name: name.to_string(),
-                        });
-
-                        *action_state = big_brain::actions::ActionState::Success;
-                        continue;
-                    }
-
-                    to_move.push(NPCActionType::Move {
-                        actor: entity,
-                        new_position: future_pos,
-                    });
-
-                    *action_state = big_brain::actions::ActionState::Success;
-                }
-                _ => debug!(action_state = format!("{:?}", *action_state).as_str()),
-            }
-        }
-    }
-
-    for (Actor(entity), mut action_state) in idle_actors.iter_mut() {
-        let Ok((_, transform, name)) = enemies.get(*entity) else {
-            continue;
-        };
-
         if !matches!(*action_state, ActionState::Requested) {
             continue;
         }
+
+        let Ok((entity, npc_transform, name)) = enemies.get(*actor) else {
+            continue;
+        };
+
+        let Some(future_pos) = resolve_position(npc_transform, player_pos, &occupied) else {
+            // in this case there is nowhere to move, so we just mark the action as success and move on
+            *action_state = big_brain::actions::ActionState::Success;
+            continue;
+        };
+
+        // if our new position is the same as the player position, then instead of moving, we attack the player
+        if future_pos.truncate() == player_pos.translation.truncate() {
+            to_move.push(NPCActionType::Attack {
+                target: player_entity,
+                attacker_name: name.to_string(),
+            });
+
+            *action_state = big_brain::actions::ActionState::Success;
+            continue;
+        }
+
+        to_move.push(NPCActionType::Move {
+            actor: entity,
+            new_position: future_pos,
+        });
+
+        // if we move to new position, we also have to add it into the set of occupied positions
+        occupied.insert(future_pos.truncate().as_i64vec2());
+
+        *action_state = big_brain::actions::ActionState::Success;
+    }
+
+    for (Actor(entity), mut action_state) in idle_actors.iter_mut() {
+        if !matches!(*action_state, ActionState::Requested) {
+            continue;
+        }
+
+        let Ok((_, transform, name)) = enemies.get(*entity) else {
+            continue;
+        };
 
         let mut possible_tries = vec![
             RandomMoveDirection::Up,
@@ -145,7 +121,6 @@ pub fn enemy_turn(
         ];
 
         while !possible_tries.is_empty() {
-            debug!(possible_ties = ?&possible_tries);
             let move_direction: RandomMoveDirection = rand::random();
             if !possible_tries.contains(&move_direction) {
                 continue;
@@ -169,26 +144,18 @@ pub fn enemy_turn(
 
             let new_pos = transform.translation + new_pos;
 
-            if blockers
-                .iter()
-                .find(|(transform, _)| transform.translation.trunc() == new_pos.trunc())
-                .is_none()
-                && to_move
-                    .iter()
-                    .find(|action| match action {
-                        NPCActionType::Move { new_position, .. } => {
-                            new_pos.truncate() == new_position.truncate()
-                        }
-                        _ => false,
-                    })
-                    .is_none()
-            {
-                to_move.push(NPCActionType::Move {
-                    actor: *entity,
-                    new_position: new_pos,
-                });
-                break;
-            };
+            // if the new position is occupied we just move on
+            if occupied.contains(&new_pos.truncate().as_i64vec2()) {
+                continue;
+            }
+
+            to_move.push(NPCActionType::Move {
+                actor: *entity,
+                new_position: new_pos,
+            });
+
+            occupied.insert(new_pos.truncate().as_i64vec2());
+            break;
         }
 
         *action_state = ActionState::Success;
@@ -197,13 +164,19 @@ pub fn enemy_turn(
     to_move
 }
 
-fn resolve_position(npc: &Transform, player: &Transform, blockers: Vec<Transform>) -> Option<Vec3> {
+/// Here we resolve in what direction the enemy should move in to get close to the player, ie down, up, left or right.
+/// If correctly resolved and the position we should move to is not occupied, we then we return new position
+fn resolve_position(
+    npc: &Transform,
+    player: &Transform,
+    blockers: &HashSet<I64Vec2>,
+) -> Option<Vec3> {
     // if player is right to the npc
     if player.translation.x > npc.translation.x
-        && !blockers.iter().any(|pos| {
-            pos.translation.x == npc.translation.x + super::SPRITE_SIZE
-                && pos.translation.y == npc.translation.y
-        })
+        && !blockers.contains(&I64Vec2::new(
+            (npc.translation.x + super::SPRITE_SIZE) as i64,
+            npc.translation.y as i64,
+        ))
     {
         return Some(Vec3::new(
             npc.translation.x + super::SPRITE_SIZE,
@@ -214,10 +187,10 @@ fn resolve_position(npc: &Transform, player: &Transform, blockers: Vec<Transform
 
     // if player is left to the npc
     if player.translation.x < npc.translation.x
-        && !blockers.iter().any(|pos| {
-            pos.translation.x == npc.translation.x - super::SPRITE_SIZE
-                && pos.translation.y == npc.translation.y
-        })
+        && !blockers.contains(&I64Vec2::new(
+            (npc.translation.x - super::SPRITE_SIZE) as i64,
+            npc.translation.y as i64,
+        ))
     {
         return Some(Vec3::new(
             npc.translation.x - super::SPRITE_SIZE,
@@ -228,10 +201,10 @@ fn resolve_position(npc: &Transform, player: &Transform, blockers: Vec<Transform
 
     // if player is above the npc
     if player.translation.y > npc.translation.y
-        && !blockers.iter().any(|pos| {
-            pos.translation.y == npc.translation.y + super::SPRITE_SIZE
-                && pos.translation.x == npc.translation.x
-        })
+        && !blockers.contains(&I64Vec2::new(
+            npc.translation.x as i64,
+            (npc.translation.y + super::SPRITE_SIZE) as i64,
+        ))
     {
         return Some(Vec3::new(
             npc.translation.x,
@@ -242,10 +215,10 @@ fn resolve_position(npc: &Transform, player: &Transform, blockers: Vec<Transform
 
     // if player is bellow the npc
     if player.translation.y < npc.translation.y
-        && !blockers.iter().any(|pos| {
-            pos.translation.y == npc.translation.y - super::SPRITE_SIZE
-                && pos.translation.x == npc.translation.x
-        })
+        && !blockers.contains(&I64Vec2::new(
+            npc.translation.x as i64,
+            (npc.translation.y - super::SPRITE_SIZE) as i64,
+        ))
     {
         return Some(Vec3::new(
             npc.translation.x,
@@ -272,7 +245,6 @@ pub fn enemy_move(
                 actor: entity,
                 new_position,
             } => {
-                trace!(?entity, ?new_position, "moving NPC");
                 let mut position = q
                     .get_mut(entity)
                     .expect("requested entity for movement not found");

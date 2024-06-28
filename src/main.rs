@@ -23,14 +23,19 @@ fn main() {
         .add_event::<systems::ui::LogEvent>()
         .insert_state(GameState::PlayerTurn)
         .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Lonely Wanderer".to_string(),
-                    resolution: (1024f32, 768f32).into(),
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Lonely Wanderer".to_string(),
+                        resolution: (1024f32, 768f32).into(),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(bevy::log::LogPlugin {
+                    filter: "wanderer::systems::enemy=trace".to_string(),
                     ..default()
                 }),
-                ..default()
-            }),
             player::PlayerPlugins,
             ranged::RangedPlugin,
             EguiPlugin,
