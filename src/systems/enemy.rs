@@ -37,8 +37,7 @@ pub struct EnemyTurnSet;
 pub enum NPCActionType {
     Move {
         actor: Entity,
-        x: f32,
-        y: f32,
+        new_position: Vec3,
     },
     /// Attack Action and attacker's details (EntityId, Name)
     Attack {
@@ -89,11 +88,10 @@ pub fn enemy_turn(
                             .filter_map(|action| {
                                 if let NPCActionType::Move {
                                     actor: entity,
-                                    x,
-                                    y,
+                                    new_position,
                                 } = action
                                 {
-                                    Some(Transform::from_xyz(*x, *y, super::MONSTER_LAYER))
+                                    Some(Transform::from_translation(*new_position))
                                 } else {
                                     None
                                 }
@@ -120,8 +118,7 @@ pub fn enemy_turn(
 
                     to_move.push(NPCActionType::Move {
                         actor: entity,
-                        x: future_pos.x,
-                        y: future_pos.y,
+                        new_position: future_pos,
                     });
 
                     *action_state = big_brain::actions::ActionState::Success;
@@ -179,15 +176,16 @@ pub fn enemy_turn(
                 && to_move
                     .iter()
                     .find(|action| match action {
-                        NPCActionType::Move { x, y, .. } => new_pos.truncate() == Vec2::new(*x, *y),
+                        NPCActionType::Move { new_position, .. } => {
+                            new_pos.truncate() == new_position.truncate()
+                        }
                         _ => false,
                     })
                     .is_none()
             {
                 to_move.push(NPCActionType::Move {
                     actor: *entity,
-                    x: new_pos.x,
-                    y: new_pos.y,
+                    new_position: new_pos,
                 });
                 break;
             };
@@ -272,15 +270,14 @@ pub fn enemy_move(
         match action_type {
             NPCActionType::Move {
                 actor: entity,
-                x,
-                y,
+                new_position,
             } => {
-                trace!(?entity, ?x, ?y, "moving NPC");
+                trace!(?entity, ?new_position, "moving NPC");
                 let mut position = q
                     .get_mut(entity)
                     .expect("requested entity for movement not found");
 
-                position.translation = Vec3::new(x, y, position.translation.z);
+                position.translation = new_position;
             }
             NPCActionType::Attack {
                 target,
