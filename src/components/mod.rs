@@ -262,7 +262,7 @@ stat_fmt!(Agility);
 stat_fmt!(Endurance);
 stat_fmt!(Intelligence);
 
-#[derive(Debug, Bundle, Component)]
+#[derive(Debug, Bundle)]
 pub struct Stats {
     strength: Strength,
     agility: Agility,

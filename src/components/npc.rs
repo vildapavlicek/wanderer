@@ -10,7 +10,7 @@ use rand::Rng;
 //     blocking: super::Blocking,
 // }
 
-#[derive(Debug, Bundle, Component)]
+#[derive(Debug, Bundle)]
 pub struct MeleeEnemy {
     health: super::Health,
     name: super::ItemName,
@@ -21,7 +21,6 @@ pub struct MeleeEnemy {
     blocking: super::Blocking,
     _h: super::Enemy,
 
-    #[bundle]
     stats: super::Stats,
 }
 

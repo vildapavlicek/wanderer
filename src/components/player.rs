@@ -14,7 +14,7 @@ pub struct XP {
     max: usize,
 }
 
-#[derive(Debug, Bundle, Component)]
+#[derive(Debug, Bundle)]
 pub struct PlayerBundle {
     _p: Player,
     name: super::ItemName,
@@ -25,7 +25,6 @@ pub struct PlayerBundle {
     blocking: super::Blocking,
     state: super::State,
 
-    #[bundle]
     stats: super::Stats,
 }
 

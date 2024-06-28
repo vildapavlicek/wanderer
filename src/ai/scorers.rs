@@ -5,6 +5,9 @@ use bevy::ecs::prelude::{Commands, Query, With};
 use bevy::prelude::*;
 use big_brain::prelude::*;
 
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct NpcScorerSet;
+
 #[derive(Debug, Copy, Clone, Component)]
 pub struct PlayerInRange;
 
@@ -23,6 +26,8 @@ impl ScorerBuilder for PlayerInRangeBuilder {
     }
 }
 
+use crate::map::SPRITE_SIZE;
+
 pub fn player_in_range_scorer_system(
     player: Query<&Transform, With<Player>>,
     movers: Query<(Entity, &Transform), With<Enemy>>,
@@ -40,12 +45,12 @@ pub fn player_in_range_scorer_system(
             let pos_diff = player_translation - npc_translation;
             debug!(%pos_diff);
 
-            if player_translation.abs_diff_eq(npc_translation, 32.) {
+            if player_translation.abs_diff_eq(npc_translation, SPRITE_SIZE) {
                 trace!("setting score to 1");
                 score.set(1.);
             } else {
                 let range = npc_translation - player_translation;
-                let (x, y) = (range.x / 32., range.y / 32.);
+                let (x, y) = (range.x / SPRITE_SIZE, range.y / SPRITE_SIZE);
                 debug!(
                     ?npc_translation,
                     ?player_translation,

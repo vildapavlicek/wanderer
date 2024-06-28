@@ -1,14 +1,17 @@
 use crate::components::{player::PlayerCamera, Enemy, Health};
 use crate::resources::GameState;
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 pub struct RangedPlugin;
 
 impl Plugin for RangedPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(
-            SystemSet::on_update(GameState::RangedTargeting)
-                .with_system(targeting.chain(ranged_attack)),
+        app.add_systems(
+            Update,
+            targeting
+                .pipe(ranged_attack)
+                .run_if(in_state(GameState::RangedTargeting)),
         );
     }
 }
@@ -26,23 +29,21 @@ pub struct TargetLocation {
 }
 
 pub fn targeting(
-    windows: Res<Windows>,
-    mut game_state: ResMut<State<GameState>>,
+    primary_window: Query<&Window, With<PrimaryWindow>>,
+    mut game_state: ResMut<NextState<GameState>>,
     mut target: Local<TargetLocation>,
-    mut key_input: ResMut<Input<KeyCode>>,
-    mouse_input: ResMut<Input<MouseButton>>,
+    mut key_input: ResMut<ButtonInput<KeyCode>>,
+    mouse_input: ResMut<ButtonInput<MouseButton>>,
     q_camera: Query<&Transform, With<PlayerCamera>>,
 ) -> Option<RangedAttackEvent> {
     if key_input.just_pressed(KeyCode::Escape) {
         // key_input.update();
-        game_state
-            .set(GameState::PlayerTurn)
-            .expect("failed to set GameState to PlayerTurn");
+        game_state.set(GameState::PlayerTurn);
         return None;
     }
 
     // https://bevy-cheatbook.github.io/cookbook/cursor2world.html
-    let window = windows.get_primary().expect("no primary window!");
+    let window = primary_window.single();
 
     if let Some(pos) = window.cursor_position() {
         // get the size of the window
@@ -79,7 +80,7 @@ use crate::components::ItemName;
 fn ranged_attack(
     In(target): In<Option<RangedAttackEvent>>,
     mut commands: Commands,
-    mut game_state: ResMut<State<GameState>>,
+    mut game_state: ResMut<NextState<GameState>>,
     mut query: Query<(Entity, &Transform, &mut Health, &ItemName), With<Enemy>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
@@ -98,13 +99,14 @@ fn ranged_attack(
                 commands.entity(entity).despawn();
             }
 
-            game_state.set(GameState::EnemyTurn).unwrap();
+            game_state.set(GameState::EnemyTurn);
         }
     }
 }
 
+use crate::map::SPRITE_SIZE;
 fn get_coords(x: f32, y: f32) -> (f32, f32) {
-    let x2 = (x / 32.).round() * 32.;
-    let y2 = (y / 32.).round() * 32.;
+    let x2 = (x / SPRITE_SIZE).round() * SPRITE_SIZE;
+    let y2 = (y / SPRITE_SIZE).round() * SPRITE_SIZE;
     (x2, y2)
 }

@@ -5,6 +5,9 @@ use bevy::prelude::*;
 use big_brain::actions::ActionState;
 use big_brain::prelude::Actor;
 
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EnemyTurnSet;
+
 pub enum MoveDirection {
     Left,
     Right,
@@ -160,7 +163,7 @@ pub fn enemy_move(
     In(to_move): In<Vec<NPCActionType>>,
     mut q: Query<&mut Transform>,
     mut targets: Query<(Entity, &mut Health), With<Player>>,
-    mut game_state: ResMut<State<GameState>>,
+    mut game_state: ResMut<NextState<GameState>>,
     mut log_writer: EventWriter<LogEvent>,
 ) {
     for action_type in to_move.into_iter() {
@@ -181,7 +184,5 @@ pub fn enemy_move(
             }
         }
     }
-    game_state
-        .set(GameState::PlayerTurn)
-        .expect("failed to set GameState to PlayerTurn");
+    game_state.set(GameState::PlayerTurn);
 }

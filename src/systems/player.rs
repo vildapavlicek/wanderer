@@ -4,31 +4,40 @@ use crate::{
         player::{Player, PlayerBundle, PlayerCamera},
         Blocking, Enemy, Health,
     },
+    map::MapGenSet,
     resources::{GameState, Materials},
-    systems::PlayerSystems,
 };
 use bevy::prelude::*;
 use std::default::Default;
+
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct PlayerSetupSet;
+
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct PlayerTurnSet;
 
 pub struct PlayerPlugins;
 
 impl Plugin for PlayerPlugins {
     fn build(&self, app: &mut App) {
-        app.add_startup_stage("spawn_player", SystemStage::single(spawn_player))
-            .add_system_set(
-                SystemSet::on_update(GameState::PlayerTurn).with_system(
-                    handle_key_input
-                        .chain(player_move_or_attack)
-                        .label(PlayerSystems::HandleInput),
-                ),
-            )
-            .add_event::<PlayerActionEvent>();
+        app.add_systems(
+            Startup,
+            spawn_player.run_if(run_once()).in_set(PlayerSetupSet),
+        )
+        .add_systems(
+            Update,
+            (handle_key_input.pipe(player_move_or_attack))
+                .run_if(in_state(GameState::PlayerTurn))
+                .in_set(PlayerTurnSet),
+        )
+        .configure_sets(Startup, PlayerSetupSet.after(MapGenSet))
+        .configure_sets(Update, PlayerTurnSet.run_if(player_spawned));
     }
 }
 
 pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
-    commands
-        .spawn_bundle(SpriteBundle {
+    commands.spawn((
+        SpriteBundle {
             texture: materials.player_material.clone(),
             sprite: Sprite {
                 custom_size: Some(Vec2::new(super::SPRITE_SIZE, super::SPRITE_SIZE)),
@@ -36,8 +45,13 @@ pub fn spawn_player(mut commands: Commands, materials: Res<Materials>) {
             },
             transform: Transform::from_xyz(0., 0., super::PLAYER_LAYER),
             ..Default::default()
-        })
-        .insert_bundle(PlayerBundle::new(10));
+        },
+        PlayerBundle::new(10),
+    ));
+}
+
+pub fn player_spawned(player: Query<&Player>) -> bool {
+    player.get_single().is_ok()
 }
 
 /// This is used to map key to action
@@ -55,36 +69,36 @@ pub enum PlayerActionEvent {
 }
 
 pub fn handle_key_input(
-    mut game_state: ResMut<State<GameState>>,
-    mut key_input: ResMut<Input<KeyCode>>,
+    mut game_state: ResMut<NextState<GameState>>,
+    mut key_input: ResMut<ButtonInput<KeyCode>>,
     player_position: Query<&Transform, With<Player>>,
     blocker_position: Query<(Entity, &Transform, &Blocking)>,
 ) -> Option<PlayerActionEvent> {
     let player_position = player_position.single();
 
-    let action = if key_input.just_pressed(KeyCode::Left) {
+    let action = if key_input.just_pressed(KeyCode::ArrowLeft) {
         PlayerAction::Movement(
             player_position.translation.x - super::MOVE_SIZE,
             player_position.translation.y,
         )
-    } else if key_input.just_pressed(KeyCode::Up) {
+    } else if key_input.just_pressed(KeyCode::ArrowUp) {
         PlayerAction::Movement(
             player_position.translation.x,
             player_position.translation.y + super::MOVE_SIZE,
         )
-    } else if key_input.just_pressed(KeyCode::Right) {
+    } else if key_input.just_pressed(KeyCode::ArrowRight) {
         PlayerAction::Movement(
             player_position.translation.x + super::MOVE_SIZE,
             player_position.translation.y,
         )
-    } else if key_input.just_pressed(KeyCode::Down) {
+    } else if key_input.just_pressed(KeyCode::ArrowDown) {
         PlayerAction::Movement(
             player_position.translation.x,
             player_position.translation.y - super::MOVE_SIZE,
         )
-    } else if key_input.just_pressed(KeyCode::T) {
+    } else if key_input.just_pressed(KeyCode::KeyT) {
         PlayerAction::RangedTargeting
-    } else if key_input.just_pressed(KeyCode::S) {
+    } else if key_input.just_pressed(KeyCode::KeyS) {
         PlayerAction::SkipTurn
     } else {
         PlayerAction::NoAction
@@ -106,15 +120,11 @@ pub fn handle_key_input(
             }
         }
         PlayerAction::RangedTargeting => {
-            game_state
-                .set(GameState::RangedTargeting)
-                .expect("failed to change game state to RangedTargeting");
+            game_state.set(GameState::RangedTargeting);
             None
         }
         PlayerAction::SkipTurn => {
-            game_state
-                .set(GameState::EnemyTurn)
-                .expect("failed to set enemy turn after player skipping turn");
+            game_state.set(GameState::EnemyTurn);
             None
         }
         PlayerAction::NoAction => None,
@@ -125,7 +135,7 @@ use crate::systems::ui::LogEvent;
 
 pub fn player_move_or_attack(
     In(event): In<Option<PlayerActionEvent>>,
-    mut game_state: ResMut<State<GameState>>,
+    mut game_state: ResMut<NextState<GameState>>,
     mut cameras: Query<&mut Transform, Or<(With<Player>, With<PlayerCamera>)>>,
     mut enemies: Query<(Entity, &mut Health, &crate::components::ItemName), With<Enemy>>,
     mut log_writer: EventWriter<LogEvent>,
@@ -136,9 +146,7 @@ pub fn player_move_or_attack(
                 .iter_mut()
                 .for_each(|mut t| t.translation = Vec3::new(x, y, t.translation.z));
 
-            game_state
-                .set(GameState::EnemyTurn)
-                .expect("failed to set game state to enemy turn after player movement");
+            game_state.set(GameState::EnemyTurn);
         }
         Some(PlayerActionEvent::Attack(target)) => {
             if let Ok((_, mut health, name)) = enemies.get_mut(target) {
@@ -146,9 +154,7 @@ pub fn player_move_or_attack(
                 log_writer.send(LogEvent::player_attack(name.to_string(), 1));
             }
 
-            game_state
-                .set(GameState::EnemyTurn)
-                .expect("failed to set game state to enemy turn after player attack");
+            game_state.set(GameState::EnemyTurn);
         }
         _ => (),
     };

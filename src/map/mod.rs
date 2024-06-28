@@ -1,20 +1,23 @@
 use crate::components::{Blocking, ItemName};
 use crate::resources::Materials;
 use bevy::prelude::*;
+use bevy::render::render_resource::Texture;
 use bevy::utils::HashSet;
 use num_integer::Integer;
 use rand::Rng;
 use std::borrow::BorrowMut;
 
-const SPRITE_SIZE: f32 = 32.;
+pub const SPRITE_SIZE: f32 = 32.;
+const MOVE_SIZE: f32 = SPRITE_SIZE;
 const FLOOR_LAYER: f32 = 0.;
 const ITEM_LAYER: f32 = 1.;
 const MONSTER_LAYER: f32 = 2.;
 const PLAYER_LAYER: f32 = 3.;
 
-const MOVE_SIZE: f32 = 32.;
-
 type TileSet = HashSet<Tile>;
+
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct MapGenSet;
 
 struct Map {
     rooms: Vec<Room>,
@@ -66,21 +69,8 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
         match kind {
             TileType::Wall => {
                 let r = rng.gen_range(0. ..=0.99);
-                cmd.spawn_bundle(SpriteSheetBundle {
-                    texture_atlas: materials.cave_wall_sprite_sheet.clone(),
-                    transform: Transform::from_xyz(
-                        to_coords(pos.x),
-                        to_coords(pos.y),
-                        MONSTER_LAYER,
-                    ),
-                    ..Default::default()
-                })
-                .insert(Blocking::wall())
-                .insert(crate::components::Timer(Timer::from_seconds(r, true)));
-
-                // cmd.spawn_bundle(SpriteBundle {
-                //     material: materials.cave_wall.clone(),
-                //     sprite: Sprite::new(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                // cmd.spawn(SpriteSheetBundle {
+                //     texture: materials.cave_wall_sprite_sheet.clone(),
                 //     transform: Transform::from_xyz(
                 //         to_coords(pos.x),
                 //         to_coords(pos.y),
@@ -88,10 +78,29 @@ pub fn generate_map(mut cmd: Commands, materials: Res<Materials>) {
                 //     ),
                 //     ..Default::default()
                 // })
-                // .insert(Blocking::wall());
+                // .insert(Blocking::wall())
+                // .insert(crate::components::Timer(Timer::from_seconds(
+                //     r,
+                //     TimerMode::Repeating,
+                // )));
+
+                cmd.spawn(SpriteBundle {
+                    texture: materials.cave_wall_sprite_sheet.clone(),
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                        ..default()
+                    },
+                    transform: Transform::from_xyz(
+                        to_coords(pos.x),
+                        to_coords(pos.y),
+                        MONSTER_LAYER,
+                    ),
+                    ..Default::default()
+                })
+                .insert(Blocking::wall());
             }
             TileType::Floor => {
-                cmd.spawn_bundle(SpriteBundle {
+                cmd.spawn(SpriteBundle {
                     texture: materials.floor_material.clone(),
                     sprite: Sprite {
                         custom_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
@@ -218,7 +227,7 @@ impl Room {
 
 /// Converts position to game coordinates.
 fn to_coords(x: i32) -> f32 {
-    x as f32 * 32.
+    x as f32 * SPRITE_SIZE
 }
 
 /// Tile type so we can differentiate and then spawn with correct assest
@@ -318,13 +327,15 @@ fn test_hash_eq() {
     };
 
     assert_eq!(t1_hash, t2_hash, "first test failed");
-    assert_ne!(t1_hash, t3_hash, "secont test failed");
+    assert_ne!(t1_hash, t3_hash, "second test failed");
     assert_eq!(t3_hash, t4_hash, "third test failed")
 }
 
 mod monster_spawner {
     use super::*;
     use crate::components::npc::MonsterStrength;
+    use crate::systems::AnimationContext;
+    use big_brain::measures;
     use big_brain::pickers::FirstToScore;
     use big_brain::prelude::Thinker;
 
@@ -412,17 +423,30 @@ mod monster_spawner {
 
                 match r {
                     _ if (0. ..0.25).contains(&r) => {
-                        cmd.spawn_bundle(SpriteSheetBundle {
-                            texture_atlas: materials.flamey_sprite_sheet.clone(),
-                            transform: Transform::from_xyz(
-                                to_coords(monster.pos.x),
-                                to_coords(monster.pos.y),
-                                MONSTER_LAYER,
-                            ),
-                            ..Default::default()
-                        })
-                        .insert(crate::components::Timer(Timer::from_seconds(0.1, true)))
-                        .insert_bundle(crate::components::npc::MeleeEnemy::new(
+                        cmd.spawn((
+                            SpriteBundle {
+                                texture: materials.flamey_sprite_sheet.sprite_sheet.clone(),
+                                transform: Transform::from_xyz(
+                                    to_coords(monster.pos.x),
+                                    to_coords(monster.pos.y),
+                                    MONSTER_LAYER,
+                                ),
+                                ..Default::default()
+                            },
+                            TextureAtlas {
+                                layout: materials.flamey_sprite_sheet.atlas_layout.clone(),
+                                index: materials.flamey_sprite_sheet.first_index,
+                            },
+                            AnimationContext {
+                                first_index: materials.flamey_sprite_sheet.first_index,
+                                last_index: materials.flamey_sprite_sheet.last_index,
+                            },
+                        ))
+                        .insert(crate::components::Timer(Timer::from_seconds(
+                            0.1,
+                            TimerMode::Repeating,
+                        )))
+                        .insert(crate::components::npc::MeleeEnemy::new(
                             "Flamey".into(),
                             5,
                             crate::components::Race::Elemental,
@@ -439,7 +463,7 @@ mod monster_spawner {
                         );
                     }
                     _ if (0.25..0.6).contains(&r) => {
-                        cmd.spawn_bundle(SpriteBundle {
+                        cmd.spawn(SpriteBundle {
                             sprite: Sprite {
                                 custom_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
                                 ..Default::default()
@@ -452,7 +476,7 @@ mod monster_spawner {
                             ),
                             ..Default::default()
                         })
-                        .insert_bundle(crate::components::npc::MeleeEnemy::new(
+                        .insert(crate::components::npc::MeleeEnemy::new(
                             "Cave MOLE".into(),
                             5,
                             crate::components::Race::Unknown,
@@ -469,7 +493,7 @@ mod monster_spawner {
                         );
                     }
                     _ => {
-                        cmd.spawn_bundle(SpriteBundle {
+                        cmd.spawn(SpriteBundle {
                             sprite: Sprite {
                                 custom_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
                                 ..Default::default()
@@ -482,7 +506,7 @@ mod monster_spawner {
                             ),
                             ..Default::default()
                         })
-                        .insert_bundle(crate::components::npc::MeleeEnemy::new(
+                        .insert(crate::components::npc::MeleeEnemy::new(
                             "Cave Spider".into(),
                             5,
                             crate::components::Race::Unknown,

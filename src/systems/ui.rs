@@ -1,9 +1,10 @@
-use bevy::prelude::ResMut;
+use bevy::prelude::{Event, ResMut, Resource};
+use bevy::window::PrimaryWindow;
 use bevy::{
     ecs::prelude::{Query, Res, With},
-    prelude::Windows,
+    prelude::Window,
 };
-use bevy_egui::{egui, EguiContext, EguiPlugin};
+use bevy_egui::{egui, EguiContext, EguiContexts, EguiPlugin};
 use chrono::Local;
 use std::borrow::Cow;
 
@@ -11,7 +12,7 @@ use crate::components::{
     player::Player, Agility, Endurance, Health, Intelligence, ItemName, Level, Race, Strength,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Resource)]
 pub struct LogMessages(Vec<LogEvent>);
 
 impl LogMessages {
@@ -33,7 +34,7 @@ impl std::default::Default for LogMessages {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Event)]
 pub enum LogEvent {
     PlayerAttack {
         time: chrono::DateTime<Local>,
@@ -142,9 +143,9 @@ impl EventTarget {
 }
 
 pub fn ui(
-    mut egui_ctx: ResMut<EguiContext>,
+    mut egui_ctx: EguiContexts,
     logs: Res<LogMessages>,
-    windows: Res<Windows>,
+    primary_window: Query<&Window, With<PrimaryWindow>>,
     player_query: Query<
         (
             &Health,
@@ -159,7 +160,7 @@ pub fn ui(
         With<Player>,
     >,
 ) {
-    let window = windows.get_primary().unwrap();
+    let window = primary_window.single();
     let height = window.height();
 
     let (hp, agi, end, int, str, level, name, race) = player_query.single();
@@ -189,7 +190,7 @@ pub fn ui(
             ui.heading("Player info");
 
             ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
-                ui.image(egui::TextureId::User(1), egui::Vec2::new(64., 64.));
+                // ui.image(egui::TextureId::User(1), egui::Vec2::new(64., 64.));
 
                 ui.separator();
 
@@ -239,7 +240,7 @@ pub fn ui(
 }
 
 pub fn update_logs(mut events: bevy::prelude::EventReader<LogEvent>, mut log: ResMut<LogMessages>) {
-    for event in events.iter() {
+    for event in events.read() {
         log.add_message(event.clone());
     }
 }
